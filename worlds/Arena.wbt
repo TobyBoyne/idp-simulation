@@ -19,7 +19,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.34799006337577565 -0.8940485510494015 -0.2820994579189926 1.727038139380694
-  position -2.0115322816264354 2.0144735623604517 -0.060195900255220536
+  position -2.0553668181698845 2.050648036530208 -0.06382034290415999
 }
 TexturedBackground {
 }
@@ -201,6 +201,11 @@ DEF WALL_4 Solid {
 Robot {
   translation 0.960089 0.08 0.973543
   children [
+    Receiver {
+      channel 1
+    }
+    Emitter {
+    }
     GPS {
     }
     Camera {
@@ -328,4 +333,14 @@ Robot {
     mass 1
   }
   controller "collector_bot"
+}
+Robot {
+  children [
+    Emitter {
+    }
+    Receiver {
+    }
+  ]
+  name "shared"
+  controller "shared_controller"
 }

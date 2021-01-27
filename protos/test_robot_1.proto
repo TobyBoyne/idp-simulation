@@ -1,0 +1,173 @@
+PROTO test_robot_1 [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 1 0 0
+  field SFColor colour 1 0 0 
+	]
+	{
+  Robot {
+	
+  translation IS translation
+  rotation IS rotation
+  children [
+    DEF CLAW_R HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.05 0 0.1
+      }
+      device [
+        RotationalMotor {
+          name "R_ARM_MOTOR"
+        }
+      ]
+      endPoint Solid {
+        translation -0.049999999014305234 0 0.15
+        children [
+          Shape {
+            appearance PBRAppearance {
+            }
+            geometry DEF ARM Box {
+              size 0.01 0.05 0.1
+            }
+          }
+        ]
+        name "solid(4)"
+        boundingObject USE ARM
+        physics Physics {
+        }
+      }
+    }
+    DEF CLAW_L HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.05 0 0.1
+      }
+      device [
+        RotationalMotor {
+          name "L_ARM_MOTOR"
+        }
+      ]
+      endPoint Solid {
+        translation 0.05 0 0.15
+        children [
+          Shape {
+            appearance PBRAppearance {
+            }
+            geometry DEF ARM Box {
+              size 0.01 0.05 0.1
+            }
+          }
+        ]
+        name "solid(3)"
+        boundingObject USE ARM
+        physics Physics {
+        }
+      }
+    }
+    Transform {
+      translation 0 -0.025 -0.1
+      children [
+        Solid {
+          translation 0 -0.0125 0.0125
+          rotation 1 0 0 3.1415
+          children [
+            DEF REAR_CONE Shape {
+              appearance PBRAppearance {
+                baseColor 1 0 0
+                metalness 0
+              }
+              geometry DEF CONE_GEO Cone {
+                bottomRadius 0.01
+                height 0.025
+              }
+            }
+          ]
+          name "solid(2)"
+          contactMaterial "no_friction"
+          boundingObject Shape {
+            geometry Sphere {
+              radius 0.0125
+              subdivision 2
+            }
+          }
+          physics Physics {
+          }
+        }
+      ]
+    }
+    DEF WHEEL_R HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor -0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "Wheel_R"
+        }
+      ]
+      endPoint DEF WHEEL2 Solid {
+        translation -0.06 0 0.05
+        rotation 0 0 1 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0 1 1
+              metalness 0
+            }
+            geometry DEF WHEEL Cylinder {
+              height 0.02
+              radius 0.05
+            }
+          }
+        ]
+        name "solid(1)"
+        contactMaterial "grip"
+        boundingObject USE WHEEL
+        physics Physics {
+        }
+      }
+    }
+    DEF WHEEL_L HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "Wheel_L"
+        }
+      ]
+      endPoint DEF WHEEL1 Solid {
+        translation 0.06 0 0.05
+        rotation 0 0 1 1.5708
+        children [
+          DEF WHEEL Shape {
+            appearance PBRAppearance {
+              baseColor 0 1 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.02
+              radius 0.05
+            }
+          }
+        ]
+        contactMaterial "grip"
+        boundingObject USE WHEEL
+        physics DEF WHEEL_PH Physics {
+        }
+      }
+    }
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.05 0.2
+      }
+    }
+  ]
+  boundingObject USE BODY
+  physics Physics {
+  }
+  controller "TEST1_CONTROLLER"
+}
+	}

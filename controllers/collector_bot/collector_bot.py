@@ -1,10 +1,14 @@
 """collector_bot controller."""
 
-import struct
+import time
 
-from controller import Robot, Emitter, Receiver
+# import modules in parent directory 
+import sys, os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from radio import Radio
 
-# create the Robot instance.
+from controller import Robot
+
 
 TIME_STEP = 32
 MAX_SPEED = 6.28
@@ -13,13 +17,6 @@ MAX_SPEED = 6.28
 ROBOT_PARAMS = {
     'red_bot': {'colour': 'red', 'channel': 1}
 }
-
-
-def decodeCommand(msg):
-    FORMAT = '3sdd'
-    b, v1, v2 = struct.unpack(FORMAT, msg)
-    cmd = b.decode(encoding='utf-8')
-    return cmd, v1, v2
 
 
 class Collector(Robot):
@@ -34,13 +31,7 @@ class Collector(Robot):
         
         # setup motors
         
-        # setup communication
-        self.emitter = Emitter('emitter')
-        self.emitter.setChannel(1)
-        
-        self.receiver = Receiver('receiver')
-        self.receiver.enable(TIME_STEP)
-        self.receiver.setChannel(1)
+        self.radio = Radio(channel=1)
         
         self.commands = {
             'SPN': self._spin,
@@ -48,9 +39,9 @@ class Collector(Robot):
         }
         
         
-    def runCommand(self, cmd, v1, v2):
+    def runCommand(self, cmd, *values):
         if cmd in self.commands:
-            self.commands[cmd](v1, v2)
+            self.commands[cmd](*values)
         
     def _spin(self, *args):
         """Spin one full rotation while reading from distance sensor"""
@@ -62,18 +53,15 @@ class Collector(Robot):
     
     def run(self):
         while robot.step(TIME_STEP) != -1:
-            pos = self.gps.getValues()  
-
-            # each loop, poll the receiver to see if there are any new commands from shared controller
-            # if there are, decode the command and execute it
-            if self.receiver.getQueueLength():
-                packet = self.receiver.getData()
-                self.receiver.nextPacket() # after being read, pop item from queue
-                cmd, v1, v2 = decodeCommand(packet)
-                print(cmd)
-                
-                self.runCommand(cmd, v1, v2)
+            pos = self.gps.getValues()
             
+            msg = self.radio.receive()
+            if msg is not None:
+                self.runCommand(*msg)
+            
+            if time.perf_counter() % 1 < 0.1:
+                msg = ('GPS', pos[0], pos[2])
+                self.radio.send(*msg)
             
             
 robot = Collector()            

@@ -1,47 +1,39 @@
 """shared_controller controller."""
 
-import struct
-# https://docs.python.org/3/library/struct.html
 import time
 
-from controller import Robot, Emitter, Receiver
+# import modules in parent directory 
+import sys, os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from radio import Radio
 
-# create the Robot instance.
+from controller import Robot
+
 TIME_STEP = 32
-
-def encodeCommand(cmd, v1, v2):
-    """Encode a message using struct for emitting/receiving
-    msg has form ('CMD', float, float)"""
-    FORMAT = '3sdd' # 3-length string, float, float
-    b = bytes(cmd, encoding='utf-8')
-    msg = struct.pack(FORMAT, b, v1, v2)
-    return msg
-
 
 class Shared(Robot):
     def __init__(self):
         super().__init__()
-              
-        self.name = self.getName()
-       
-        
+             
         # setup communication
-        self.emitter = Emitter('emitter')
-        self.emitter.setChannel(1)
+        self.red_radio = Radio(channel=1,
+            emitter_name='emitter_red', receiver_name='receiver_red')
+        self.blue_radio = Radio(channel=2,
+            emitter_name='emitter_blue', receiver_name='receiver_blue')
         
-        self.receiver = Receiver('receiver')
-        self.receiver.enable(TIME_STEP)
-        self.receiver.setChannel(1)
         
     def run(self):
         while robot.step(TIME_STEP) != -1:
             # send message to robot to move forward
             if time.perf_counter() % 1 < 0.1:
-                msg = encodeCommand('SPN', 0., 0.)
-                self.emitter.send(msg)
+                msg = ('SPN', 0., 0.)
+                self.red_radio.send(*msg)
                 
-            
-                            
-
+            packet = self.red_radio.receive()
+            if packet is not None:
+                print(packet)
+                pass
+                
+             
 robot = Shared()
 robot.run()

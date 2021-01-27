@@ -205,6 +205,7 @@ Robot {
       channel 1
     }
     Emitter {
+      channel 1
     }
     GPS {
     }
@@ -337,8 +338,19 @@ Robot {
 Robot {
   children [
     Emitter {
+      name "emitter_blue"
     }
     Receiver {
+      name "receiver_blue"
+      channel 2
+    }
+    Emitter {
+      name "emitter_red"
+      channel 1
+    }
+    Receiver {
+      name "receiver_red"
+      channel 1
     }
   ]
   name "shared"

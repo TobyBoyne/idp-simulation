@@ -1,6 +1,7 @@
 """collector_bot controller."""
 
 import time
+import math
 
 # import modules in parent directory 
 import sys, os
@@ -27,6 +28,9 @@ class Collector(Robot):
         self.gps = self.getDevice('gps')
         self.gps.enable(TIME_STEP)
         
+        self.compass = self.getDevice('compass')
+        self.compass.enable(TIME_STEP)
+        
         self.name = self.getName()
         
         # setup motors
@@ -50,10 +54,20 @@ class Collector(Robot):
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
         print('Moving')
+        
+        
+    def _getBearing(self):
+        """Returns the current bearing of the robot in radians"""
+        north = self.compass.getValues()
+        rad = math.atan2(north[0], north[2])
+        return rad
     
     def run(self):
         while robot.step(TIME_STEP) != -1:
             pos = self.gps.getValues()
+            
+            heading = self._getBearing()
+            print(heading)
             
             msg = self.radio.receive()
             if msg is not None:

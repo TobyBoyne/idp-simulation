@@ -25,13 +25,16 @@ class Shared(Robot):
         
         
     def run(self):
-        while robot.step(TIME_STEP) != -1:
-            # send message to robot to move forward
-            if time.perf_counter() % 1 < 0.1:
-                msg = ('SPN', 0., 0.)
-                self.red_radio.send(*msg)
-                
+        # only send the spin message once
+        msg = ('SPN', 0., 0.)
+        self.red_radio.send(*msg)
+        
+        while robot.step(TIME_STEP) != -1:           
             packet = self.red_radio.receive()
+            if time.perf_counter() > 40:
+                self.red_radio.send('STP', 0., 0.)
+            
+            
             if packet is not None:
                 
                 print(packet)

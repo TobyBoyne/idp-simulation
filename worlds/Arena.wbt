@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.20291877279896828 -0.9274397996662079 -0.3141327579875502 2.304387062814877
-  position 0.7538884834678738 0.2944462077355234 0.7069157765126985
+  orientation -0.2071832258696821 -0.9182050318847268 -0.337601289007907 2.342328972460218
+  position -0.35024454180096176 1.685584176180772 -0.31353627532936956
 }
 TexturedBackground {
 }
@@ -71,7 +71,7 @@ DEF Block_R3 Solid {
   }
 }
 DEF Block_R4 Solid {
-  translation 0.1 0.05 1.1
+  translation 0.63 0.05 0.91
   children [
     USE BOX_R
   ]
@@ -199,7 +199,7 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 Robot {
-  translation 1 0.06 1
+  translation 0.93 0.06 0.95
   children [
     SharpGP2Y0A02YK0F {
       translation 0.01 0 -0.12

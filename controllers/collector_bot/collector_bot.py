@@ -55,15 +55,20 @@ class Collector(Robot):
         self.commands = {
             'SPN': self._spin,
             'MOV': self._move,
+            'STP': self._stop,
         }
+        
+        self.cur_command = None
+        self.cur_values = []
         
         self.data = []
         
+             
+    def runCommand(self):
+        if self.cur_command is not None:
+            self.cur_command(*self.cur_values)
         
-    def runCommand(self, cmd, *values):
-        if cmd in self.commands:
-            self.commands[cmd](*values)
-        
+    
     def _spin(self, *args):
         # Set spinning
         self.leftmotor.setVelocity(0.05*MAX_SPEED)
@@ -80,22 +85,31 @@ class Collector(Robot):
         pos_d = pos - DIST_SENSOR_OFFSET
         pos_t = pos_d - d * heading_vec
                 
-        
         # Store for evaluation
         self.data.append(pos_t)
                 
-        np.save('listnp.npy', np.array(self.data)) 
+        
   
         
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
         print('Moving')
         
+        
+    def _stop(self, *args):
+        """Stops rotation, saves data to file"""
+        self.leftmotor.setVelocity(0.)
+        self.rightmotor.setVelocity(0.)
+
+        
+        if self.data:
+            np.save('listnp.npy', np.array(self.data)) 
+            self.data = []
+        
     def _getPos(self):
         """Returns current position of the robot as a 2-length vector"""
         pos_lst = self.gps.getValues()
         return np.array([pos_lst[0], pos_lst[2]])
-        
         
     def _getBearing(self, as_vector=False):
         """Returns the current bearing of the robot in radians
@@ -111,10 +125,16 @@ class Collector(Robot):
     def run(self):
         while robot.step(TIME_STEP) != -1:
             
+            # receive message
             msg = self.radio.receive()
             if msg is not None:
-                self.runCommand(*msg)
-
+                cmd, *values = msg
+                self.cur_command = self.commands.get(cmd, None)
+                self.cur_values = values
+                              
+                
+            # run the last command that was given
+            self.runCommand()
             
 robot = Collector()            
 robot.run()

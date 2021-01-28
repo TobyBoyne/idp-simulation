@@ -21,6 +21,8 @@ class Shared(Robot):
         self.blue_radio = Radio(channel=2,
             emitter_name='emitter_blue', receiver_name='receiver_blue')
         
+        self.data = []
+        
         
     def run(self):
         while robot.step(TIME_STEP) != -1:
@@ -31,6 +33,7 @@ class Shared(Robot):
                 
             packet = self.red_radio.receive()
             if packet is not None:
+                
                 print(packet)
                 pass
                 

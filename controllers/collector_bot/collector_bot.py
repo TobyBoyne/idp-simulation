@@ -8,16 +8,18 @@ import sys, os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from radio import Radio
 
-from controller import Robot
+from controller import Robot, DistanceSensor
 
 
-TIME_STEP = 32
+TIME_STEP = 16
 MAX_SPEED = 6.28
 
 # parameters based on the colour of the robot
 ROBOT_PARAMS = {
     'red_bot': {'colour': 'red', 'channel': 1}
 }
+
+
 
 
 class Collector(Robot):
@@ -31,9 +33,19 @@ class Collector(Robot):
         self.compass = self.getDevice('compass')
         self.compass.enable(TIME_STEP)
         
+        self.dist_sensor = self.getDevice('distance1')
+        self.dist_sensor.enable(TIME_STEP)
+        
         self.name = self.getName()
         
         # setup motors
+        self.leftmotor = self.getDevice('wheel1')
+        self.rightmotor = self.getDevice('wheel2')
+        
+        self.leftmotor.setPosition(float('inf'))
+        self.rightmotor.setPosition(float('inf'))
+        self.leftmotor.setVelocity(0.0)
+        self.rightmotor.setVelocity(0.0)
         
         self.radio = Radio(channel=1)
         
@@ -42,14 +54,38 @@ class Collector(Robot):
             'MOV': self._move,
         }
         
+        self.data = []
+        
         
     def runCommand(self, cmd, *values):
         if cmd in self.commands:
             self.commands[cmd](*values)
         
     def _spin(self, *args):
-        """Spin one full rotation while reading from distance sensor"""
-        print('Spinning')
+    
+        # Set spinning
+        self.leftmotor.setVelocity(0.05*MAX_SPEED)
+        self.rightmotor.setVelocity(-0.05*MAX_SPEED)
+        
+        # Record spatial information
+        pos = self.gps.getValues()
+        d = self.dist_sensor.getValue()
+        heading = self._getBearing()
+        
+        # Process dist sensor measurement
+        d = 0.7611*(d**(-0.9313))-0.1252
+        
+        # Find Target Coords
+        pos_d = [pos[0] - 0.01, pos[2] + 0.12]
+        pos_t = [pos_d[0] - d*math.cos(heading), pos_d[1] - d*math.sin(heading)]
+        
+        # Store for evaluation
+        self.data.append(pos_t)
+        with open('listfile.txt', 'w') as filehandle:
+            for listitem in self.data:
+                filehandle.write('%s\n' % listitem)
+        
+        # print('Spinning')
         
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
@@ -64,18 +100,10 @@ class Collector(Robot):
     
     def run(self):
         while robot.step(TIME_STEP) != -1:
-            pos = self.gps.getValues()
-            
-            heading = self._getBearing()
-            print(heading)
             
             msg = self.radio.receive()
             if msg is not None:
                 self.runCommand(*msg)
-            
-            if time.perf_counter() % 1 < 0.1:
-                msg = ('GPS', pos[0], pos[2])
-                self.radio.send(*msg)
             
             
 robot = Collector()            

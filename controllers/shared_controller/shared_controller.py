@@ -25,20 +25,31 @@ class Shared(Robot):
         
         
     def run(self):
-        # only send the spin message once
-        msg = ('SPN', 0., 0.)
+        
+        # Send spin message and wait for reply
+        msg = ('SCN', 0., 0.)
         self.red_radio.send(*msg)
         
-        while robot.step(TIME_STEP) != -1:           
+        
+        # Can we dispense with inheriting from robot?
+        while robot.step(TIME_STEP) != -1:
+            pass
+           
+        """
+        packet = None
+        while packet == None:
             packet = self.red_radio.receive()
-            if time.perf_counter() > 40:
-                self.red_radio.send('STP', 0., 0.)
-            
-            
-            if packet is not None:
-                
-                print(packet)
-                pass
+            # timeout escape
+        packet = None
+        
+        
+        # process data
+        np.save('listnp.npy', np.array(self.data)) 
+        """
+        
+        # Next instruction
+        self.red_radio.send('MOV', 0., 0.)
+        
                 
              
 robot = Shared()

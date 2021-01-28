@@ -15,7 +15,7 @@ from controller import Robot, DistanceSensor
 TIME_STEP = 16
 MAX_SPEED = 6.28
 
-DIST_SENSOR_OFFSET = np.array([0.01, -0.12])
+DIST_TO_SENSOR = 0.12
 
 # parameters based on the colour of the robot
 ROBOT_PARAMS = {
@@ -53,15 +53,24 @@ class Collector(Robot):
         self.radio = Radio(channel=1)
         
         self.commands = {
-            'SPN': self._spin,
+            'SCN': self._scan,
             'MOV': self._move,
-            'STP': self._stop,
         }
+        
+        self.data = []
+        
+        self.clearQueue()
+        
+        
+    def clearQueue(self):
         
         self.cur_command = None
         self.cur_values = []
         
-        self.data = []
+        if self.data:
+            np.save('listnp.npy', np.array(self.data)) 
+            # self.radio.send(self.data)
+            self.data = []
         
              
     def runCommand(self):
@@ -69,10 +78,11 @@ class Collector(Robot):
             self.cur_command(*self.cur_values)
         
     
-    def _spin(self, *args):
+    def _scan(self, *args):
+        """Scan the environment with a full spin recording from the distance sensor"""
+        
         # Set spinning
-        self.leftmotor.setVelocity(0.05*MAX_SPEED)
-        self.rightmotor.setVelocity(-0.05*MAX_SPEED)
+        self._spin(0.05)
         
         # Record spatial information
         pos = self._getPos()
@@ -82,29 +92,35 @@ class Collector(Robot):
         d = 0.7611 * (d**(-0.9313)) - 0.1252
         
         # Find Target Coords
-        pos_d = pos - DIST_SENSOR_OFFSET
+        pos_d = pos - DIST_TO_SENSOR * heading_vec
         pos_t = pos_d - d * heading_vec
                 
         # Store for evaluation
         self.data.append(pos_t)
-                
         
-  
+        # Completeness Test
+        if len(self.data) > 2000:
+            self.clearQueue()
+            self._drive(0)
+                
         
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
-        print('Moving')
+        
+        pos = self._getPos()
+        # target = np.array(*args)
+        self._drive(0.5)
         
         
-    def _stop(self, *args):
-        """Stops rotation, saves data to file"""
-        self.leftmotor.setVelocity(0.)
-        self.rightmotor.setVelocity(0.)
+    def _drive(self, v):
+        self.leftmotor.setVelocity(v*MAX_SPEED)
+        self.rightmotor.setVelocity(v*MAX_SPEED)
+        
+        
+    def _spin(self, v):
+        self.leftmotor.setVelocity(v*MAX_SPEED)
+        self.rightmotor.setVelocity(-v*MAX_SPEED)
 
-        
-        if self.data:
-            np.save('listnp.npy', np.array(self.data)) 
-            self.data = []
         
     def _getPos(self):
         """Returns current position of the robot as a 2-length vector"""
@@ -128,6 +144,7 @@ class Collector(Robot):
             # receive message
             msg = self.radio.receive()
             if msg is not None:
+                print(msg)
                 cmd, *values = msg
                 self.cur_command = self.commands.get(cmd, None)
                 self.cur_values = values

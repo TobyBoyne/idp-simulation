@@ -2,6 +2,7 @@
 
 import time
 import math
+import numpy as np
 
 # import modules in parent directory 
 import sys, os
@@ -13,6 +14,8 @@ from controller import Robot, DistanceSensor
 
 TIME_STEP = 16
 MAX_SPEED = 6.28
+
+DIST_SENSOR_OFFSET = np.array([0.01, -0.12])
 
 # parameters based on the colour of the robot
 ROBOT_PARAMS = {
@@ -62,40 +65,47 @@ class Collector(Robot):
             self.commands[cmd](*values)
         
     def _spin(self, *args):
-    
         # Set spinning
         self.leftmotor.setVelocity(0.05*MAX_SPEED)
         self.rightmotor.setVelocity(-0.05*MAX_SPEED)
         
         # Record spatial information
-        pos = self.gps.getValues()
+        pos = self._getPos()
         d = self.dist_sensor.getValue()
-        heading = self._getBearing()
-        
+        heading_vec = self._getBearing(as_vector=True)
         # Process dist sensor measurement
-        d = 0.7611*(d**(-0.9313))-0.1252
+        d = 0.7611 * (d**(-0.9313)) - 0.1252
         
         # Find Target Coords
-        pos_d = [pos[0] - 0.01, pos[2] + 0.12]
-        pos_t = [pos_d[0] - d*math.cos(heading), pos_d[1] - d*math.sin(heading)]
+        pos_d = pos - DIST_SENSOR_OFFSET
+        pos_t = pos_d - d * heading_vec
+                
         
         # Store for evaluation
         self.data.append(pos_t)
-        with open('listfile.txt', 'w') as filehandle:
-            for listitem in self.data:
-                filehandle.write('%s\n' % listitem)
-        
-        # print('Spinning')
+                
+        np.save('listnp.npy', np.array(self.data)) 
+  
         
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
         print('Moving')
         
+    def _getPos(self):
+        """Returns current position of the robot as a 2-length vector"""
+        pos_lst = self.gps.getValues()
+        return np.array([pos_lst[0], pos_lst[2]])
         
-    def _getBearing(self):
-        """Returns the current bearing of the robot in radians"""
+        
+    def _getBearing(self, as_vector=False):
+        """Returns the current bearing of the robot in radians
+        If as_vector, return the unit vector in the direction of the heading"""
         north = self.compass.getValues()
-        rad = math.atan2(north[0], north[2])
+        if as_vector:
+            v = np.array([north[0], north[2]])
+            return v / np.linalg.norm(v)
+
+        rad = np.arctan2(north[0], north[2])
         return rad
     
     def run(self):
@@ -104,7 +114,7 @@ class Collector(Robot):
             msg = self.radio.receive()
             if msg is not None:
                 self.runCommand(*msg)
-            
+
             
 robot = Collector()            
 robot.run()

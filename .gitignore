@@ -1,3 +1,5 @@
 .idea
 worlds/*.wbproj
 protos/*.cache
+controllers/collector_bot/listfile.txt
+controllers/collector_bot/listnp.npy

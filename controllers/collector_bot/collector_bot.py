@@ -13,7 +13,7 @@ from controller import Robot, DistanceSensor
 
 
 TIME_STEP = 16
-MAX_SPEED = - 6.28
+MAX_SPEED = 6.28
 
 DIST_TO_SENSOR = 0.12
 
@@ -71,7 +71,7 @@ class Collector(Robot):
         self.display = self.getDevice('display')
         
     def clearQueue(self):
-        
+        self._drive(0)
         self.cur_command = None
         self.cur_values = []
         
@@ -109,7 +109,7 @@ class Collector(Robot):
         # Completeness Test
         if len(self.data) > 2000:
             self.clearQueue()
-            self._drive(0)
+            self.radio.send('DNE', 0., 0.)
                 
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
@@ -122,12 +122,20 @@ class Collector(Robot):
         # compute cross product(v_targ, v_head) 
         # sign shows which direction to turn
         cross = v_head[0] * v_targ[1] - v_head[1] * v_targ[0]
-        dot = abs(np.dot(v_head, v_targ))
+        
+        # dot product determines spin speed
+        # large dot product -> closely alligned -> small speed
+        dot = np.clip(np.dot(v_head, v_targ), 0, 0.8)
         base_speed = 0.5
-        # dot = 0.5
+        
         v_left =  base_speed - (1 - dot if cross < 0 else 0)
         v_right = base_speed - (1 - dot if cross > 0 else 0)
         self._wheelMotors(v_left, v_right)
+                
+        
+        if np.linalg.norm(target - pos) < 0.1:
+            self.clearQueue()
+            self.radio.send('DNE', 0., 0.)
         
         
         
@@ -154,7 +162,7 @@ class Collector(Robot):
         self.display.drawText('Target vector', 10, 10)
         self.display.drawLine(x1, y1, x2, y2)
         self.display.fillOval(x_t, y_t, 3, 3)
-        self.display.drawText(f'positive cross={cross>0}', 10, 450)
+        self.display.drawText('left' if cross<0 else 'right', 10, 450)
         
         self.display.setColor(int('0x5555ff', 16))
         self.display.drawText('Heading vector', 10, 40)
@@ -193,7 +201,7 @@ class Collector(Robot):
         return rad
     
     def run(self):
-        while robot.step(TIME_STEP) != -1:
+        while self.step(TIME_STEP) != -1:
             
             # receive message
             msg = self.radio.receive()

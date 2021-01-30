@@ -22,7 +22,27 @@ class Shared(Robot):
         self.blue_radio = Radio(channel=2,
             emitter_name='emitter_blue', receiver_name='receiver_blue')
         
+        self.commands = {
+            'DNE': self._robotCmdDone,
+            'BOX': self._boxFound,
+        }
+        
+        self.red_queue = []
+        self.blue_queue = []
+        
         self.data = []
+        
+    def _robotCmdDone(self, robot, *args):
+        """Once a robot has completed a command, issue the next"""
+        print('Robot has finished')
+        if len(self.red_queue) > 0:
+            next_command = self.red_queue.pop(0)
+            self.red_radio.send(*next_command)
+        
+        
+    def _boxFound(self, robot, *args):
+        """Process the location of a box discovered by a robot"""
+        pass
         
         
     def plotScanRoute(self, R=0.4, step_multiple=1.):
@@ -41,7 +61,7 @@ class Shared(Robot):
         commands = []
         for x, z in zip(path_xs, path_zs):
             commands.append(['MOV', x, z])
-            commands.append(['SPN', 0., 0.])
+            commands.append(['SCN', 0., 0.])
             
         return commands
         
@@ -49,13 +69,23 @@ class Shared(Robot):
         
         # Send spin message and wait for reply
         # msg = ('SCN', 0., 0.)
-        msg = ('MOV', 0.2, 0.2)
+        
+        # move to start
+        msg = ('MOV', 1., 1.)
         self.red_radio.send(*msg)
-        self.plotScanRoute()
+        self.red_queue = self.plotScanRoute()
         
         
-        while robot.step(TIME_STEP) != -1:
-            pass
+        while self.step(TIME_STEP) != -1:
+            msg = self.red_radio.receive()
+            if msg is not None:
+                print(msg)
+                cmd, *values = msg
+                command = self.commands.get(cmd, None)
+                if command is not None:
+                    robot = 'red'
+                    command(robot, *values)
+            
            
         """
         packet = None
@@ -74,5 +104,5 @@ class Shared(Robot):
         
                 
              
-robot = Shared()
-robot.run()
+shared = Shared()
+shared.run()

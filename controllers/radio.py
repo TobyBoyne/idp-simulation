@@ -5,7 +5,7 @@ import struct
 
 from controller import Emitter, Receiver
 
-TIME_STEP = 32
+TIME_STEP = 16
 
 # format to encode the message using struct
 #   3s:string of length 3 = command
@@ -16,7 +16,7 @@ FORMAT = '3s2d'
 ENCODING = 'utf-8'
 
 
-def encodeCommand(cmd, v1, v2):
+def encodeCommand(cmd, v1=0., v2=0.):
     b = bytes(cmd, encoding=ENCODING)
     msg = struct.pack(FORMAT, b, v1, v2)
     return msg

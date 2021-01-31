@@ -10,7 +10,7 @@ from radio import Radio
 
 from controller import Robot
 
-TIME_STEP = 32
+TIME_STEP = 16
 
 class Shared(Robot):
     def __init__(self):
@@ -73,8 +73,8 @@ class Shared(Robot):
         # move to start
         msg = ('MOV', 1., 1.)
         self.red_radio.send(*msg)
-        self.red_queue = self.plotScanRoute()
-        
+        # self.red_queue = self.plotScanRoute()
+        self.red_queue = [['SCN', 0.4, 35]]
         
         while self.step(TIME_STEP) != -1:
             msg = self.red_radio.receive()

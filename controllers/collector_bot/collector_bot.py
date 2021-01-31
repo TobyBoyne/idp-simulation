@@ -30,6 +30,13 @@ def displayNormalise(v):
     # convert to list to use base numpy type int
     return clipped.astype(int).tolist()
 
+        
+def pointInsideWalls(p):
+    x, y = p
+    # L is slightly less than the actual width to account for noise in distance sensor
+    L = 1.16
+    return -L <= x <= L and -L <= y <= L
+
 
 class Collector(Robot):
     def __init__(self):
@@ -64,6 +71,7 @@ class Collector(Robot):
         }
         
         self.data = []
+        self.scan_time = 0
         
         self.clearQueue()
         
@@ -74,6 +82,8 @@ class Collector(Robot):
         self._drive(0)
         self.cur_command = None
         self.cur_values = []
+        
+        self.scan_time = 0
         
         if self.data:
             np.save('listnp.npy', np.array(self.data)) 
@@ -88,6 +98,19 @@ class Collector(Robot):
 
     def _scan(self, *args):
         """Scan the environment with a full spin recording from the distance sensor"""
+        # first arg is the radius of the scan
+        # second arg is total time to scan for
+        R = args[0]
+        tot_time = args[1]
+        
+         # completeness test
+        self.scan_time += TIME_STEP / 1000
+        if self.scan_time > tot_time:
+            print('Done scanning')
+            self.clearQueue()
+            self.radio.send('DNE')
+            return
+        
         
         # Set spinning
         self._spin(0.05)
@@ -99,18 +122,23 @@ class Collector(Robot):
         # Process dist sensor measurement
         d = 0.7611 * (d**(-0.9313)) - 0.1252
         
+       
+        
+        # skip this point if distance is greater than the max radius
+        if d > R: return
+        
         # Find Target Coords
         pos_d = pos - DIST_TO_SENSOR * heading_vec
         pos_t = pos_d - d * heading_vec
                 
+                
+        # do not store if the point lies on a wall
+        if not pointInsideWalls(pos_t): return
+        
         # Store for evaluation
         self.data.append(pos_t)
         
-        # Completeness Test
-        if len(self.data) > 2000:
-            self.clearQueue()
-            self.radio.send('DNE', 0., 0.)
-                
+
     def _move(self, *args):
         """Move to a point, with some basic collision avoidance along the way"""
         

@@ -71,7 +71,7 @@ class Shared(Robot):
         # msg = ('SCN', 0., 0.)
         
         # move to start
-        msg = ('MOV', 1., 1.)
+        msg = ('MOV', 0.3, 0.2)
         self.red_radio.send(*msg)
         # self.red_queue = self.plotScanRoute()
         self.red_queue = [['SCN', 0.4, 35]]

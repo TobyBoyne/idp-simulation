@@ -30,6 +30,44 @@ def pointInsideWalls(p):
     L = 1.16
     return -L <= x <= L and -L <= y <= L
 
+def findClusters(data_lst, pos):
+    """Find the clusters within the scanned datapoints"""
+    data = np.array(data_lst)
+    centroids = data[0, None]
+    min_R = 0.1
+
+    # if there are few datapoints, break out early
+    if data.shape[0] < 5:
+        return np.array([])
+
+    for _ in range(8):
+        dists = np.linalg.norm(data[:, None, :] - centroids[None, :, :], axis=-1)
+        potentials = (1 / dists).sum(axis=1)
+
+        new_c_idx = np.argmin(potentials)
+
+        if np.min(dists[new_c_idx]) < min_R:
+            # if this is close to an existing centroid, stop finding centroids
+            break
+
+        centroids = np.concatenate([centroids, data[new_c_idx, None]], axis=0)
+
+
+    # run a single k-means to find the centroid of each cluster
+    k = centroids.shape[0]
+    dists = np.linalg.norm(data[:, None, :] - centroids[None, :, :], axis=-1)
+    closest_centroid = np.argmin(dists, axis=-1)
+    
+    A = 0.05 * 1.1222 / 2
+    for n in range(k):
+        new_centroid = data[closest_centroid == n].mean(axis=0)
+        # move centroid away from the robot, as the outside of the block is scanned
+        # avg radius of square is A
+        v = (new_centroid - pos) / np.linalg.norm(pos - new_centroid)
+        new_centroid += v * A
+        centroids[n] = new_centroid
+
+    return centroids
 
 class Collector(Robot):
     def __init__(self):
@@ -80,8 +118,12 @@ class Collector(Robot):
         self.scan_time = 0
         
         if self.data:
+            # find the boxes, send data to shared controller
+            box_coords = findClusters(self.data, self._getPos())
+            for coord in box_coords:
+                x, z = coord
+                self.radio.send('BOX', x, z)
             np.save('listnp.npy', np.array(self.data)) 
-            # self.radio.send(self.data)
             self.data = []
         
              
@@ -100,14 +142,13 @@ class Collector(Robot):
          # completeness test
         self.scan_time += TIME_STEP / 1000
         if self.scan_time > tot_time:
-            print('Done scanning')
             self.clearQueue()
             self.radio.send('DNE')
             return
         
         
         # Set spinning
-        self._spin(0.05)
+        self._spin(0.10)
         
         # Record spatial information
         pos = self._getPos()

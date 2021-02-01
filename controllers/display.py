@@ -5,6 +5,7 @@ colours = {
     'white':  int('0xffffff', 16),
     'red':    int('0xff0000', 16),
     'blue':   int('0x5555ff', 16),
+    'green':  int('0x55ff00', 16),
 }
 
 class MapDisplay:
@@ -27,14 +28,17 @@ class MapDisplay:
     def clear(self):
         self.display.setColor(colours['black'])
         self.display.fillPolygon([0, 0, self.w, self.w], [0, self.w, self.w, 0])
-
+        
+        # draw home squares
         red_home = np.array([[0.8, 1.2, 1.2, 0.8], [0.8, 0.8, 1.2, 1.2]])
-        self.display.setColor(colours['red'])
-        self.display.fillPolygon(*self.normalise(red_home))
+        self.drawPolygon(red_home, colour='red', fill=True)
 
         blue_home = (red_home.T + np.array([0., -2., ])).T
-        self.display.setColor(colours['blue'])
-        self.display.fillPolygon(*self.normalise(blue_home))
+        self.drawPolygon(blue_home, colour='blue', fill=True)
+
+        
+        # write label of display
+        # self.drawText(
 
 
     def drawPoint(self, pos, size, colour='white', name=None):

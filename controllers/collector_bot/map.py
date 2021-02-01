@@ -3,7 +3,21 @@ import numpy as np
 
 ARENA_SIZE = 1.2
 arena = ARENA_SIZE * np.array([[-1., -1.], [-1., 1.], [1., 1.], [1., -1.], [-1., -1.]]).T
+
+red_home = np.array([[0.8, 1.2, 1.2, 0.8], [0.8, 0.8, 1.2, 1.2]])
+blue_home = (red_home.T + np.array([0., -2., ])).T
+
 fig, ax = plt.subplots()
+ax.add_artist(plt.Polygon(red_home.T, color='tab:red'))
+ax.add_artist(plt.Polygon(blue_home.T, color='blue'))
+ax.plot(*arena)
+
+scanning_points = np.array([[1., 1.], [0.6, 0.5], [0.1, 0.4], [0., 0.]])
+for pt in scanning_points:
+	circle = plt.Circle(pt, radius=0.4+0.3, alpha=0.05, color='green')
+	ax.add_artist(circle)
+	ax.plot(*pt, 'x', color='green')
+
 
 np.random.seed(2)
 
@@ -39,15 +53,20 @@ def findClusters(data):
 
 
 
+
+
 np_data = np.load('listnp.npy')
 X, Y = np_data.T
 
 ax.scatter(X, Y, alpha=0.1, color='grey')
-ax.plot(*arena)
 
-findClusters(np_data)
+# findClusters(np_data)
 
-ax.set_xlim(0, 1.4)
-ax.set_ylim(0, 1.4)
+np_boxes = np.load('box_locations.npy')
+x, y = np_boxes.T
+ax.scatter(x, y)
+
+ax.set_xlim(-1.4, 1.4)
+ax.set_ylim(1.4, -1.4)
 ax.set_aspect('equal')
 plt.show()

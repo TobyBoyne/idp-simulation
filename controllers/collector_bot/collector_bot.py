@@ -181,6 +181,7 @@ class Collector(Robot):
         target = np.array(args)
         v_targ = (target - pos) / np.linalg.norm(target - pos)
         v_head = self._getBearing(as_vector=True)
+        theta = np.arccos(np.dot(v_targ, v_head))
         
         # compute cross product(v_targ, v_head) 
         # sign shows which direction to turn
@@ -189,17 +190,35 @@ class Collector(Robot):
         # dot product determines spin speed
         # large dot product -> closely alligned -> small speed
         dot = np.clip(np.dot(v_head, v_targ), 0, 0.8)
-        base_speed = 0.5
+        speed = 1 - dot
         
-        v_left =  base_speed - (1 - dot if cross < 0 else 0)
-        v_right = base_speed - (1 - dot if cross > 0 else 0)
-        self._wheelMotors(v_left, v_right)
+        if theta < 0.1:
+            
+            v_left = 1
+            v_right = 1
+            
+        else:
+            
+            if cross < 0:
                 
+                v_left = -speed
+                v_right = speed
+                
+            elif cross > 0:
+            
+                v_left = speed
+                v_right = -speed
+                
+            else:
+            
+                v_left = 0
+                v_right = 0
+        
+        self._wheelMotors(v_left, v_right)        
         
         if np.linalg.norm(target - pos) < 0.1:
             self.clearQueue()
             self.radio.send('DNE', 0., 0.)
-        
         
         
         self.display.drawPoint(pos, 3, 'red')

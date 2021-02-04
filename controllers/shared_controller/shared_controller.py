@@ -31,7 +31,7 @@ class Shared(Robot):
         self.cmd_ids = {'red': 1, 'blue': 1}
         
         self.scan_route = [
-            ['MOV', 1., 1.],
+            ['MOV', 0., 0.],
             ['SCN', 0.4, 20],
             ['MOV', 0.6, 0.5],
             ['SCN', 0.4, 20],

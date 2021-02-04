@@ -28,22 +28,92 @@ class Shared(Robot):
             'BOX': self._boxFound,
         }
         
-        self.red_queue = []
-        self.blue_queue = []
+        self.cmd_ids = {'red': 1, 'blue': 1}
+        
+        self.scan_route = [
+            ['MOV', 1., 1.],
+            ['SCN', 0.4, 20],
+            ['MOV', 0.6, 0.5],
+            ['SCN', 0.4, 20],
+            ['MOV', 0.1, 0.4],
+            ['SCN', 0.4, 20],
+            ['MOV', 0., 0.],
+            ['SCN', 0.4, 20],
+        ]
         
         self.data = []
         self.boxes = np.full((8, 2), np.nan)
         self.boxes_found = {'red': [], 'blue': [], 'unknown': []}
+        
+    def _procedure(self, robot):
+    
+        """
+        Main robot procedure
+        Each number corresponds to a unique position in the flowchart
+        The decision sequence updates the position and returns the associated command
+        """
+        
+        cmd = self.cmd_ids[robot]
+        
+        # if all boxes found
+            # self.cmd_ids['robot'] = 0
+            # return ('IDL', 0., 0.)
+        
+        if cmd in [1, 2, 3]:
+            
+            if not self.boxes_found:
+                
+                if self.boxes_found[robot.colour] :
+                    
+                    # Box position
+                    self.cmd_ids[robot] = 4
+                    
+                else:
+                    
+                    # Box position
+                    self.cmd_ids[robot] = 5
+                    # return ('MOV', 1., 1.)
+                    
+            else:
+                
+                # Posiiton on scan route
+                self.cmd_ids[robot] = 6
+                return self.scan_route.pop(0)
+                
+        elif cmd == 5:
+        
+            pass
+        
+            # if box colour match:
+                
+                # self.cmd_ids[robot] = 4
+                
+            # else:
+            
+                # self.cmd_ids[robot] = 2
+                
+        elif cmd == 4:
+            
+            self.cmd_ids[robot] = 3
+            
+        elif cmd == 6:
+        
+            self.cmd_ids[robot] = 1
+            return ('SCN', 1., 5.)
+        
                 
     def _robotCmdDone(self, robot, *args):
         """Once a robot has completed a command, issue the next"""
         print('Robot has finished')
-        if len(self.red_queue) > 0:
-            next_command = self.red_queue.pop(0)
+        
+        if self.cmd_ids[robot] != 0:
+            next_command = self._procedure(robot)
+            print(next_command)
             self.red_radio.send(*next_command)
         else:
             path = os.path.join(os.getcwd(), '..', 'collector_bot', 'box_locations.npy')
             np.save(path, self.boxes)
+            
                 
     def _boxFound(self, robot, *args):
         """Process the location of a box discovered by a robot"""
@@ -96,24 +166,12 @@ class Shared(Robot):
         return commands
         
     def run(self):
+        """Main loop"""
         
-        # Send spin message and wait for reply
-        # msg = ('SCN', 0., 0.)
-        
-        # move to start
-        msg = ('MOV', 1., 1.)
-        self.red_radio.send(*msg)
-        # self.red_queue = self.plotScanRoute()
-        self.red_queue = [
-            ['SCN', 0.4, 20],
-            ['MOV', 0.6, 0.5],
-            ['SCN', 0.4, 20],
-            ['MOV', 0.1, 0.4],
-            ['SCN', 0.4, 20],
-            ['MOV', 0., 0.],
-            ['SCN', 0.4, 20],
-        ]
-        
+        next_command = self._procedure('red')
+        print(next_command)
+        self.red_radio.send(*next_command)
+             
         while self.step(TIME_STEP) != -1:
             msg = self.red_radio.receive()
             if msg is not None:
@@ -123,21 +181,6 @@ class Shared(Robot):
                 if command is not None:
                     robot = 'red'
                     command(robot, *values)
-           
-        """
-        packet = None
-        while packet == None:
-            packet = self.red_radio.receive()
-            # timeout escape
-        packet = None
-        
-        
-        # process data
-        np.save('listnp.npy', np.array(self.data)) 
-        """
-        
-        # Next instruction
-        self.red_radio.send('MOV', 0., 0.)
         
                 
              

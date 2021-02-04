@@ -190,31 +190,17 @@ class Collector(Robot):
         # dot product determines spin speed
         # large dot product -> closely alligned -> small speed
         dot = np.clip(np.dot(v_head, v_targ), 0, 0.8)
-        speed = 1 - dot
         
         if theta < 0.1:
             
-            v_left = 1
-            v_right = 1
+            speed = np.array([1, 1])
             
         else:
             
-            if cross < 0:
-                
-                v_left = -speed
-                v_right = speed
-                
-            elif cross > 0:
-            
-                v_left = speed
-                v_right = -speed
-                
-            else:
-            
-                v_left = 0
-                v_right = 0
+            speed = np.sign(cross) * (1 - dot) * np.array([1, -1])
         
-        self._wheelMotors(v_left, v_right)        
+        self._wheelMotors(speed[0], speed[1])
+             
         
         if np.linalg.norm(target - pos) < 0.1:
             self.clearQueue()

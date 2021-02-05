@@ -10,7 +10,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from radio import Radio
 from display import MapDisplay
 
-from controller import Robot, DistanceSensor
+from controller import Robot, DistanceSensor, Camera
 
 
 TIME_STEP = 16
@@ -83,6 +83,9 @@ class Collector(Robot):
         self.dist_sensor = self.getDevice('distance1')
         self.dist_sensor.enable(TIME_STEP)
         
+        self.camera = self.getDevice('camera')
+        self.camera.enable(TIME_STEP)
+        
         self.name = self.getName()
         
         # setup motors
@@ -136,6 +139,10 @@ class Collector(Robot):
         """Scan the environment with a full spin recording from the distance sensor"""
         # first arg is the radius of the scan
         # second arg is total time to scan for
+        
+        # Testing red colour detection
+        print(str(self.camera.getImageArray()[0][0][0]))
+        
         R = args[0]
         tot_time = args[1]
         
@@ -157,14 +164,12 @@ class Collector(Robot):
         # Process dist sensor measurement
         d = 0.7611 * (d**(-0.9313)) - 0.1252
         
-       
-        
         # skip this point if distance is greater than the max radius
         if d > R: return
         
         # Find Target Coords
-        pos_d = pos - DIST_TO_SENSOR * heading_vec
-        pos_t = pos_d - d * heading_vec
+        pos_d = pos + DIST_TO_SENSOR * heading_vec
+        pos_t = pos_d + d * heading_vec
                 
                 
         # skip this point if it lies on a wall
@@ -195,16 +200,18 @@ class Collector(Robot):
             
             speed = np.array([1, 1])
             
+            if np.linalg.norm(target - pos) < 0.1:
+                
+                speed = np.array([0, 0])
+            
+                self.clearQueue()
+                self.radio.send('DNE', 0., 0.)
+            
         else:
             
             speed = np.sign(cross) * (1 - dot) * np.array([1, -1])
         
         self._wheelMotors(speed[0], speed[1])
-             
-        
-        if np.linalg.norm(target - pos) < 0.1:
-            self.clearQueue()
-            self.radio.send('DNE', 0., 0.)
         
         
         self.display.drawPoint(pos, 3, 'red')

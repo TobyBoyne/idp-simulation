@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.9936856986390616 0.061063007995095 -0.09412779278614224 1.5922956279263811
-  position -0.24779403389572885 6.247445438353919 0.038371422463000744
+  orientation -0.32485310624151587 -0.8617760436841077 -0.3896312486151555 0.5174545632660326
+  position 0.2182918964223174 0.7046559767994792 2.144984639829417
 }
 TexturedBackground {
 }
@@ -206,8 +206,8 @@ Robot {
       height 512
     }
     SharpGP2Y0A02YK0F {
-      translation 0 0 -0.12
-      rotation 0 1 0 1.5708
+      translation 0 0 0.12
+      rotation 0 1 0 -1.5707953071795862
       name "distance1"
     }
     Compass {
@@ -222,6 +222,8 @@ Robot {
     }
     Camera {
       translation 0 0 0.1
+      rotation 0 1 0 -1.5708
+      fieldOfView 0.1
       width 1
       height 1
     }
@@ -261,8 +263,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation 0.06000559915048376 4.758333689312307e-06 0.049998786434356526
-        rotation 0.002206760451128204 -0.0020421880587173052 -0.9999954798279064 4.712367251344768
+        translation 0.06000559915048376 4.758333689304164e-06 0.049998786434356526
+        rotation 0.0022067604511182342 -0.00204218805871919 -0.9999954798279062 4.712367251344769
         children [
           DEF WHEEL Shape {
             appearance PBRAppearance {
@@ -293,8 +295,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation -0.06000535798759132 -4.465355525935585e-06 0.04999811264477753
-        rotation 0.001569885892634999 -0.0014057992196958313 -0.999997779590954 4.71240229164948
+        translation -0.06000535798759132 -4.465355525938617e-06 0.04999811264477753
+        rotation 0.001569885892644341 -0.0014057992196953996 -0.999997779590954 4.71240229164948
         children [
           USE WHEEL
         ]
@@ -303,41 +305,6 @@ Robot {
         physics Physics {
         }
       }
-    }
-    DEF DS_RIGHT DistanceSensor {
-      translation -0.03 0 0.1
-      rotation 0 1 0 -1.87079
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.184314 0.596078 0.847059
-            roughness 1
-            metalness 0
-          }
-          geometry Box {
-            size 0.01 0.01 0.01
-          }
-        }
-      ]
-      name "ds_right"
-      model "GP2Y0A710K0F"
-    }
-    DEF DS_LEFT DistanceSensor {
-      translation 0.03 0 0.1
-      rotation 0 1 0 -1.27079
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.184314 0.596078 0.847059
-            roughness 1
-            metalness 0
-          }
-          geometry Box {
-            size 0.01 0.01 0.01
-          }
-        }
-      ]
-      name "ds_left"
     }
   ]
   boundingObject USE BODY

@@ -102,6 +102,10 @@ class Collector(Robot):
         self.commands = {
             'SCN': self._scan,
             'MOV': self._move,
+            'IDL': self._idle,
+            'COL': None, # MAKE
+            'MRK': None,
+            'RTN': None,
         }
         
         self.data = []
@@ -133,7 +137,9 @@ class Collector(Robot):
     def runCommand(self):
         if self.cur_command is not None:
             self.cur_command(*self.cur_values)
-
+    
+    def _idle (self, *args):
+        self._drive(0)
 
     def _scan(self, *args):
         """Scan the environment with a full spin recording from the distance sensor"""
@@ -141,7 +147,8 @@ class Collector(Robot):
         # second arg is total time to scan for
         
         # Testing red colour detection
-        print(str(self.camera.getImageArray()[0][0][0]))
+        # print(str(self.camera.getImageArray()[0][0][0]))
+        # This print pops off pointing at red objects
         
         R = args[0]
         tot_time = args[1]

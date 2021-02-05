@@ -26,23 +26,21 @@ class Shared(Robot):
         self.commands = {
             'DNE': self._robotCmdDone,
             'BOX': self._boxFound,
+            'MRK': None, # MAKE
         }
         
         self.cmd_ids = {'red': 1, 'blue': 1}
         
         self.scan_route = [
-            ['SCN', 0.4, 20],
             ['MOV', 0.6, 0.5],
-            ['SCN', 0.4, 20],
             ['MOV', 0.1, 0.4],
-            ['SCN', 0.4, 20],
-            ['MOV', 0., 0.],
-            ['SCN', 0.4, 20],
+            ['MOV', 0., 0.]
         ]
         
         self.data = []
-        self.boxes = np.full((8, 2), np.nan)
-        self.boxes_found = {'red': [], 'blue': [], 'unknown': []}
+        self.box_pos = np.full((8, 2), np.nan)
+        self.boxes = {'red': [], 'blue': [], 'unknown': []}
+        self.boxes_found = 0
         
     def _procedure(self, robot):
     
@@ -54,51 +52,57 @@ class Shared(Robot):
         
         cmd = self.cmd_ids[robot]
         
-        # if all boxes found
-            # self.cmd_ids['robot'] = 0
-            # return ('IDL', 0., 0.)
         
-        if cmd in [1, 2, 3]:
+        if cmd in [1, 2, 3, 5]:
+        
+            if self.boxes_found < 8:
             
-            if not self.boxes_found:
+                if self.boxes[robot]:
+                    
+                    # Actually go to closest
+                    pos = self.box_pos[self.boxes[robot].pop(0)]
+                    self.cmd_ids[robot] = 7
+                    return ('MOV', pos[0], pos[1])
                 
-                if self.boxes_found[robot.colour] :
+                elif self.boxes['unknown']:
                     
-                    # Box position
-                    self.cmd_ids[robot] = 4
-                    
+                    pos = self.box_pos[self.boxes['unknown'].pop(0)]
+                    self.cmd_ids[robot] = 5
+                    return ('MOV', pos[0], pos[1])
+                        
                 else:
                     
-                    # Box position
-                    self.cmd_ids[robot] = 5
-                    # return ('MOV', 1., 1.)
+                    if self.scan_route:
+                        self.cmd_ids[robot] = 6
+                        return self.scan_route.pop(0)
+                    # More decisions here for route control
                     
             else:
                 
-                # Posiiton on scan route
-                self.cmd_ids[robot] = 6
-                return self.scan_route.pop(0)
-                
-        elif cmd == 5:
-        
-            pass
-        
-            # if box colour match:
-                
-                # self.cmd_ids[robot] = 4
-                
-            # else:
-            
-                # self.cmd_ids[robot] = 2
+                self.cmd_ids[robot] = 8
+                return ('RTN', 0., 0.)
                 
         elif cmd == 4:
-            
+            # self.boxes_found += 1
             self.cmd_ids[robot] = 3
+            return ('RTN', 0., 0.)
+            
+        # elif cmd == 5:
+        
+            # self.cmd_ids[robot] = 2
+            # return ('MRK', 0., 0.) 
             
         elif cmd == 6:
         
             self.cmd_ids[robot] = 1
+            # update scan parameters
             return ('SCN', 1., 5.)
+            
+        elif cmd == 7:
+        
+            self.cmd_ids[robot] = 4
+            # Collect
+            return ('COL', 0., 0.)
         
                 
     def _robotCmdDone(self, robot, *args):
@@ -120,10 +124,11 @@ class Shared(Robot):
         new_box = np.array([x, z])
         
         # get all the boxes that have been found i.e. not NaNs
-        boxes = self.boxes[~np.isnan(self.boxes[:, 0])]
+        boxes = self.box_pos[~np.isnan(self.box_pos[:, 0])]
         
         if boxes.shape[0] == 0:
-            self.boxes[0, :] = new_box
+            self.box_pos[0, :] = new_box
+            self.boxes['unknown'].append(0)
             return
             
         dists = np.linalg.norm(boxes - new_box, axis=1)
@@ -136,13 +141,14 @@ class Shared(Robot):
             return
             
         # if reach this point, recognise this as a new box
-        empty_idxs = np.isnan(self.boxes[:, 0])
+        empty_idxs = np.isnan(self.box_pos[:, 0])
         if not np.any(empty_idxs):
             print('Already found 8 boxes')
             return
             
         idx = np.argmax(empty_idxs)
-        self.boxes[idx, :] = new_box
+        self.box_pos[idx, :] = new_box
+        self.boxes['unknown'].append(idx)
         
     def plotScanRoute(self, R=0.4, step_multiple=1.):
         """Create a series of commands that make the robot take a path to scan the field"""

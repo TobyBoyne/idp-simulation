@@ -35,7 +35,7 @@ PROTO idp_bot [
     Display {
     }
     Camera {
-      translation 0 0.0122 0.0676
+      translation 0 0.0057 0.0675
       recognitionColors [
         1 0 0
       ]

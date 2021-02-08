@@ -24,10 +24,14 @@ ROBOT_PARAMS = {
 
         
 def pointInsideWalls(p):
-    x, y = p
+    x, z = p
     # L is slightly less than the actual width to account for noise in distance sensor
     L = 1.16
-    return -L <= x <= L and -L <= y <= L
+    # also ignore any points inside the homes
+    inside_walls = -L <= x <= L and -L <= z <= L
+    in_red_home = 0.8 <= x <= 1.2 and 0.8 <= z <= 1.2
+    in_blue_home = 0.8 <= x <= 1.2 and -0.8 <= z <= -1.2
+    return inside_walls and not in_red_home and not in_blue_home
 
 def findClusters(data_lst, pos):
     """Find the clusters within the scanned datapoints"""
@@ -118,13 +122,17 @@ class Collector(Robot):
             'MOV': self._move,
             'IDL': self._idle,
             'COL': self._collect,
-            'MRK': None,
-            'RTN': None,
+            'IDN': self._identify,
+            'RTN': self._return,
         }
+        
+        # set the home position to return to with RTN statement
+        self.home = np.array([1.1, 1.1])
+        
         
         # initialise these variables in __init__
         self.data = []
-        self.scan_time = 0
+        self.command_time = 0 # keeps track of how long the current command has been run for
         
         self.cur_command = None
         self.cur_values = []        
@@ -133,13 +141,13 @@ class Collector(Robot):
         display = self.getDevice('display')
         self.display = MapDisplay(display)
         
-    def clearQueue(self):
+    def clearQueue(self, **kwargs):
         """Finish any processing from the current command, then reset all variables"""
         self._idle()
         self.cur_command = None
         self.cur_values = []
         
-        self.scan_time = 0
+        self.command_time = 0
 
         if self.data:
             # find the boxes, send data to shared controller
@@ -150,6 +158,10 @@ class Collector(Robot):
             np.save('listnp.npy', np.array(self.data)) 
             self.data = []
             
+        if 'box_colour' in kwargs:
+            self.radio.send('CLR', kwargs['box_colour'])
+            
+        
         x, z = self._getPos()
         self.radio.send('DNE', x, z)
         
@@ -158,32 +170,36 @@ class Collector(Robot):
         if self.cur_command is not None:
             self.cur_command(*self.cur_values)
     
+    # IDL
     def _idle (self, *args):
         self._drive(0)
+        if args:
+            tot_time = args[0]
+            if tot_time > 0 and self.command_time > tot_time:
+                self.clearQueue()
 
+    # SCN
     def _scan(self, *args):
         """Scan the environment with a full spin recording from the distance sensor"""
         
         # Testing red colour detection
-        # print(str(self.camera.getImageArray()[0][0][0]))
-        # This print pops off pointing at red objects
         colour_values = self.camera.getImageArray()[0][0]
         as_colour = sum(c*16**(4-2*i) for i, c in enumerate(colour_values))
         self.display.drawPoint(np.array([0., 0.]), 20, as_colour) 
                 
         #TODO make sure max radius is consistent i.e. from distance sensor or GPS centre
         R = .8
-        tot_time = 20.
+        tot_time = 10.
         
          # completeness test
-        self.scan_time += TIME_STEP / 1000
-        if self.scan_time > tot_time:
+        self.command_time += TIME_STEP / 1000
+        if self.command_time > tot_time:
             self.clearQueue()
             return
         
         
         # Set spinning
-        self._spin(0.10)
+        self._spin(4.2 / tot_time)
         
         # Record spatial information
         pos = self._getPos()
@@ -191,7 +207,6 @@ class Collector(Robot):
         self.display.drawText(f'{d:.3f}', 10, 100)
         heading_vec = self._getBearing(as_vector=True)
         # Process dist sensor measurement
-        # d = 0.7611 * (d**(-0.9313)) - 0.1252
 
         
         # skip this point if distance is greater than the max radius
@@ -208,10 +223,9 @@ class Collector(Robot):
         # Store for evaluation
         self.data.append(pos_t)
         
-
-    def _move(self, *args):
+    # MOV
+    def _move(self, *args, stop_on_obst=True):
         """Move to a point, with some basic collision avoidance along the way"""
-        
         pos = self._getPos()
         target = np.array(args)
         v_targ = (target - pos) / np.linalg.norm(target - pos)
@@ -238,10 +252,13 @@ class Collector(Robot):
             self._spin(speed)
                 
         # stop if:
-        # facing the right direction, and within 0.1 m
-        # not facing the right direction, and within 0.01m
-        if np.linalg.norm(target - pos) < dist_tolerance:   
+        #  facing the right direction, and within 0.1 m
+        #  not facing the right direction, and within 0.01m
+        #  facing a block within 0.15m
+        near_obst = (self.dist_sensor.getValue() / 1000) < 0.11 and stop_on_obst
+        if near_obst or np.linalg.norm(target - pos) < dist_tolerance:
             self.clearQueue()
+            return True
         
         
         self.display.drawPoint(pos, 3, 'red')
@@ -254,18 +271,35 @@ class Collector(Robot):
         self.display.drawLegend()
         
         
-        
+    # COL
     def _collect(self, *args):
         """Once already facing a block, pick it up"""
-
-        colour_values = self.camera.getImageArray()[0][0]
-        as_colour = sum(c*16**(4-2*i) for i, c in enumerate(colour_values))
-        self.display.drawPoint(np.array([0., 0.]), 20, as_colour) 
-        
-        self._setClawAngle(0.3)
         self._setClawAngle(-0.2)
+        if self.command_time > 0.5: # small wait to avoid hitting the block
+            self.clearQueue()
         
-
+    # IDN
+    def _identify(self, *args):
+        """Line up with the box in front, then identify its colour and reverse"""
+        red_channel = self.camera.getImageArray()[0][0][0]
+        colour = 1. if red_channel > 50 else 0.
+        # if it is the wrong colour, reverse for a bit
+        if self.name == 'red_robot' and colour == 0.:
+            self._drive(-0.3)
+            if self.command_time > 1:
+                self.clearQueue(box_colour=colour)
+            
+        else:
+            self.clearQueue(box_colour=colour)
+        
+    # RTN
+    def _return(self, *args):
+        """Return home"""
+        reached_end = self._move(*self.home, stop_on_obst=False)
+        if reached_end:
+            self._setClawAngle(0.5)
+        
+    # Motor controls
     def _wheelMotors(self, v_left, v_right):
         self.leftmotor.setVelocity(v_left * MAX_SPEED)
         self.rightmotor.setVelocity(v_right * MAX_SPEED)
@@ -281,7 +315,7 @@ class Collector(Robot):
     def _spin(self, v):
         self._wheelMotors(v, -v)
 
-        
+    # Sensor reading
     def _getPos(self):
         """Returns current position of the robot as a 2-length vector"""
         pos_lst = self.gps.getValues()
@@ -297,7 +331,6 @@ class Collector(Robot):
             v = np.array([north[2], north[0]])
             return v / np.linalg.norm(v)
 
-
         rad = np.arctan2(north[0], north[2])
         return rad
     
@@ -307,12 +340,13 @@ class Collector(Robot):
         
         while self.step(TIME_STEP) != -1:
             self.display.clear()
+            self.command_time += TIME_STEP / 1000
 
             
             # receive message
             msg = self.radio.receive()
             if msg is not None:
-                print('Red received:', msg)
+                print('Red received:\t', msg)
                 cmd, *values = msg
                 self.cur_command = self.commands.get(cmd, None)
                 self.cur_values = values

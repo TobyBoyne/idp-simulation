@@ -16,7 +16,7 @@ TIME_STEP = 16
 
 def pointInsideWalls(p):
     x, y = p
-    # L is slightly less than the actual width to account for noise in distance sensor
+    # L is slightly less than the actual half-width (1.2) to account for size of robot
     L = 1.1
     return -L <= x <= L and -L <= y <= L
 
@@ -76,22 +76,38 @@ class Shared(Robot):
         
         cmd = self.cmd_ids[robot]
         boxes_found = np.sum(self.allBoxesFound())
+        print(self.boxes)
         
-        if cmd in [1, 2, 3, 5]:
+        if cmd == 3:
+            # consider the box that is currently being held as collected
+            box_idx = self.target_box[robot]
+            self.boxes[robot].remove(box_idx)
+            self.target_box[robot] = None
+        
+        if cmd in [1, 2, 3]:
         
             if boxes_found < 8:
-            
+                
+                # TODO: improve target choice
                 if self.boxes[robot]:
-                    
-                    # Actually go to closest
-                    pos = self.box_pos[self.boxes[robot].pop(0)]
                     self.cmd_ids[robot] = 7
-                    return ('MOV', pos[0], pos[1])
+
+                    box_idx = self.boxes[robot][0]
+                    self.target_box[robot] = box_idx
+                    
+                    box_x, box_z = self.box_pos[box_idx]
+                    
+                    return ('MOV', box_x, box_z)
                 
                 elif self.boxes['unknown']:
-                    pos = self.box_pos[self.boxes['unknown'].pop(0)]
                     self.cmd_ids[robot] = 5
-                    return ('MOV', pos[0], pos[1])
+                    
+                    box_idx = self.boxes['unknown'][0]
+                    self.target_box[robot] = box_idx
+                    
+                    box_x, box_z = self.box_pos[box_idx]
+                    
+                    return ('MOV', box_x, box_z)
                         
                 else:
                     # if there are no known boxes:
@@ -117,10 +133,10 @@ class Shared(Robot):
             self.cmd_ids[robot] = 3
             return ('RTN',)
             
-        # elif cmd == 5:
-        
-            # self.cmd_ids[robot] = 2
-            # return ('MRK', 0., 0.) 
+        elif cmd == 5:
+
+            self.cmd_ids[robot] = 2
+            return ('IDN',) 
             
         elif cmd == 6:
         
@@ -134,7 +150,7 @@ class Shared(Robot):
             # Collect
             return ('COL',)
         
-                
+    # DNE           
     def _robotCmdDone(self, robot, *args):
         """Once a robot has completed a command, issue the next"""
         robot_x, robot_y = args
@@ -148,14 +164,15 @@ class Shared(Robot):
         else:
             path = os.path.join(os.getcwd(), '..', 'collector_bot', 'box_locations.npy')
             np.save(path, self.boxes)
-            
+    
+    # CLR        
     def _markBox(self, robot, *args):
         """Assign the identified box to the correct colour"""
         box_idx = self.target_box[robot]
         box_colour = 'red' if args[0] else 'blue'
         
         if box_idx in self.boxes['unknown']:
-            self.boxes['unkown'].remove(box_idx)
+            self.boxes['unknown'].remove(box_idx)
             self.boxes[box_colour].append(box_idx)
             
         else:
@@ -241,7 +258,6 @@ class Shared(Robot):
             t = i * (np.pi / 50) * (-1)**(i % 2)
             # TODO: check target is within arena!
             if pointInsideWalls(pos + move_vec):
-                print('!')
                 if minDistance(pos, move_vec, found_boxes) > CLEARANCE:
                     # return this as the target vector
                     return pos + move_vec
@@ -250,7 +266,7 @@ class Shared(Robot):
             move_vec = np.dot(rot, pt - pos)
         
 
-        raise RuntimeError('Stuck in a loop')
+        raise RuntimeError('Stuck in a loop; cannot find a clear path')
                 
     def run(self):
         """Main loop"""
@@ -262,7 +278,7 @@ class Shared(Robot):
         while self.step(TIME_STEP) != -1:
             msg = self.red_radio.receive()
             if msg is not None:
-                print('Shared received:', msg)
+                print('Shared received:\t', msg)
                 cmd, *values = msg
                 command = self.commands.get(cmd, None)
                 if command is not None:

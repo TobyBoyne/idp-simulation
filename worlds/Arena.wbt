@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.32485310624151587 -0.8617760436841077 -0.3896312486151555 0.5174545632660326
-  position 0.2182918964223174 0.7046559767994792 2.144984639829417
+  orientation -0.9924194936897659 0.10079500024163592 -0.07031298934647454 1.4343871946485125
+  position 0.430154215227692 4.465382402413878 0.8072760951528719
 }
 TexturedBackground {
 }
@@ -307,12 +307,13 @@ Robot {
       }
     }
   ]
+  name "test_robot"
   boundingObject USE BODY
   physics Physics {
     density -1
     mass 1
   }
-  controller "collector_bot"
+  controller ""
 }
 Robot {
   children [
@@ -337,4 +338,6 @@ Robot {
   ]
   name "shared"
   controller "shared_controller"
+}
+idp_bot {
 }

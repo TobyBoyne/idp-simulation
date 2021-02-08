@@ -2,9 +2,12 @@ PROTO idp_bot [
   field SFVec3f    translation  0 0 0
   field SFRotation rotation     0 1 0 0
   field SFColor colour 1 0 0 
-	]
-	{
-	Robot {
+]
+{
+Robot {
+  translation IS translation
+  rotation IS rotation
+  name "red_robot"
   translation 0 0.05 0.83
   children [
     DistanceSensor {
@@ -33,12 +36,16 @@ PROTO idp_bot [
       ]
     }
     Display {
+      width 512
+      height 512
     }
     Camera {
       translation 0 0.0057 0.0675
       recognitionColors [
         1 0 0
       ]
+      width 1
+      height 1
     }
     Receiver {
     }
@@ -171,7 +178,7 @@ PROTO idp_bot [
       device [
         RotationalMotor {
           name "rwheel_motor"
-          maxVelocity 3.14
+          maxVelocity 6.28
           maxTorque 0.4
         }
       ]
@@ -203,7 +210,7 @@ PROTO idp_bot [
       device [
         RotationalMotor {
           name "lwheel_motor"
-          maxVelocity 3.14
+          maxVelocity 6.28
           maxTorque 0.4
         }
       ]
@@ -229,7 +236,8 @@ PROTO idp_bot [
     }
     Shape {
       appearance DEF colour PBRAppearance {
-        baseColor 1 0 0
+        # baseColor 1 0 0
+        baseColor IS colour
         metalness 0
       }
       geometry DEF BodyBox Box {
@@ -240,6 +248,6 @@ PROTO idp_bot [
   boundingObject USE BodyBox
   physics Physics {
   }
-  controller "TEST3_controller"
+  controller "collector_bot"
 }
 }

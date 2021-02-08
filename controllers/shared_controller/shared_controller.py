@@ -112,7 +112,8 @@ class Shared(Robot):
         if self.cmd_ids[robot] != 0:
             next_command = self._procedure(robot)
             print(next_command)
-            self.red_radio.send(*next_command)
+            if next_command is not None:
+                self.red_radio.send(*next_command)
         else:
             path = os.path.join(os.getcwd(), '..', 'collector_bot', 'box_locations.npy')
             np.save(path, self.boxes)

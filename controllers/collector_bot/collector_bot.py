@@ -80,7 +80,7 @@ class Collector(Robot):
         self.compass = self.getDevice('compass')
         self.compass.enable(TIME_STEP)
         
-        self.dist_sensor = self.getDevice('distance1')
+        self.dist_sensor = self.getDevice('distance_sensor')
         self.dist_sensor.enable(TIME_STEP)
         
         self.camera = self.getDevice('camera')
@@ -89,8 +89,8 @@ class Collector(Robot):
         self.name = self.getName()
         
         # setup motors
-        self.leftmotor = self.getDevice('wheel1')
-        self.rightmotor = self.getDevice('wheel2')
+        self.leftmotor = self.getDevice('lwheel_motor')
+        self.rightmotor = self.getDevice('rwheel_motor')
         
         self.leftmotor.setPosition(float('inf'))
         self.rightmotor.setPosition(float('inf'))
@@ -143,15 +143,13 @@ class Collector(Robot):
 
     def _scan(self, *args):
         """Scan the environment with a full spin recording from the distance sensor"""
-        # first arg is the radius of the scan
-        # second arg is total time to scan for
         
         # Testing red colour detection
         # print(str(self.camera.getImageArray()[0][0][0]))
         # This print pops off pointing at red objects
-        
-        R = args[0]
-        tot_time = args[1]
+        colour_values = self.camera.getImageArray()[0][0]
+        R = 1.
+        tot_time = 20.
         
          # completeness test
         self.scan_time += TIME_STEP / 1000
@@ -199,26 +197,28 @@ class Collector(Robot):
         # sign shows which direction to turn
         cross = v_head[0] * v_targ[1] - v_head[1] * v_targ[0]
         
-        # dot product determines spin speed
-        # large dot product -> closely alligned -> small speed
-        dot = np.clip(np.dot(v_head, v_targ), 0, 0.8)
         
         if theta < 0.1:
-            
-            speed = np.array([1, 1])
-            
-            if np.linalg.norm(target - pos) < 0.1:
-                
-                speed = np.array([0, 0])
-            
-                self.clearQueue()
-                self.radio.send('DNE', 0., 0.)
+            dist_tolerance = 0.1
+            speed = 1
+            self._drive(1)
             
         else:
+            dist_tolerance = 0.01
             
-            speed = np.sign(cross) * (1 - dot) * np.array([1, -1])
-        
-        self._wheelMotors(speed[0], speed[1])
+            # dot product determines spin speed
+            # large dot product -> closely alligned -> small speed
+            dot = np.clip(np.dot(v_head, v_targ), 0, 0.8)
+            speed = np.sign(cross) * (1 - dot)
+            self._spin(speed)
+                
+        # stop if:
+        # facing the right direction, and within 0.1 m
+        # not facing the right direction, and within 0.01m
+        if np.linalg.norm(target - pos) < dist_tolerance:   
+            self._drive(0)
+            self.clearQueue()
+            self.radio.send('DNE', 0., 0.)
         
         
         self.display.drawPoint(pos, 3, 'red')

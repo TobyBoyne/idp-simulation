@@ -10,13 +10,12 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from radio import Radio
 from display import MapDisplay
 
-from controller import Robot, DistanceSensor, Camera
-
+from controller import Robot
 
 TIME_STEP = 16
 MAX_SPEED = 6.28
 
-DIST_TO_SENSOR = 0.12
+DIST_TO_SENSOR = 0
 
 # parameters based on the colour of the robot
 ROBOT_PARAMS = {
@@ -69,6 +68,7 @@ def findClusters(data_lst, pos):
 
     return centroids
 
+
 class Collector(Robot):
     def __init__(self):
         super().__init__()
@@ -92,10 +92,24 @@ class Collector(Robot):
         self.leftmotor = self.getDevice('lwheel_motor')
         self.rightmotor = self.getDevice('rwheel_motor')
         
+        self.larmmotor = self.getDevice('larm_motor')
+        self.rarmmotor = self.getDevice('rarm_motor')
+        
+        self.larmmotor_pos = self.getDevice('larm_position')
+        self.rarmmotor_pos = self.getDevice('rarm_position')
+        self.larmmotor_pos.enable(TIME_STEP)
+        self.rarmmotor_pos.enable(TIME_STEP)
+        
         self.leftmotor.setPosition(float('inf'))
         self.rightmotor.setPosition(float('inf'))
         self.leftmotor.setVelocity(0.0)
         self.rightmotor.setVelocity(0.0)
+        
+        self.larmmotor.setPosition(0.)
+        self.rarmmotor.setPosition(0.)
+        self.leftmotor.setVelocity(MAX_SPEED)
+        self.rightmotor.setVelocity(MAX_SPEED)
+        self._setClawAngle(0.5)
         
         self.radio = Radio(channel=1)
         
@@ -103,27 +117,30 @@ class Collector(Robot):
             'SCN': self._scan,
             'MOV': self._move,
             'IDL': self._idle,
-            'COL': None, # MAKE
+            'COL': self._collect,
             'MRK': None,
             'RTN': None,
         }
         
+        # initialise these variables in __init__
         self.data = []
         self.scan_time = 0
         
-        self.clearQueue()
+        self.cur_command = None
+        self.cur_values = []        
         
         # display useful for debugging
         display = self.getDevice('display')
         self.display = MapDisplay(display)
         
     def clearQueue(self):
-        self._drive(0)
+        """Finish any processing from the current command, then reset all variables"""
+        self._idle()
         self.cur_command = None
         self.cur_values = []
         
         self.scan_time = 0
-        
+
         if self.data:
             # find the boxes, send data to shared controller
             box_coords = findClusters(self.data, self._getPos())
@@ -132,6 +149,9 @@ class Collector(Robot):
                 self.radio.send('BOX', x, z)
             np.save('listnp.npy', np.array(self.data)) 
             self.data = []
+            
+        x, z = self._getPos()
+        self.radio.send('DNE', x, z)
         
              
     def runCommand(self):
@@ -148,14 +168,17 @@ class Collector(Robot):
         # print(str(self.camera.getImageArray()[0][0][0]))
         # This print pops off pointing at red objects
         colour_values = self.camera.getImageArray()[0][0]
-        R = 1.
+        as_colour = sum(c*16**(4-2*i) for i, c in enumerate(colour_values))
+        self.display.drawPoint(np.array([0., 0.]), 20, as_colour) 
+                
+        #TODO make sure max radius is consistent i.e. from distance sensor or GPS centre
+        R = .8
         tot_time = 20.
         
          # completeness test
         self.scan_time += TIME_STEP / 1000
         if self.scan_time > tot_time:
             self.clearQueue()
-            self.radio.send('DNE')
             return
         
         
@@ -164,10 +187,12 @@ class Collector(Robot):
         
         # Record spatial information
         pos = self._getPos()
-        d = self.dist_sensor.getValue()
+        d = self.dist_sensor.getValue() / 1000
+        self.display.drawText(f'{d:.3f}', 10, 100)
         heading_vec = self._getBearing(as_vector=True)
         # Process dist sensor measurement
-        d = 0.7611 * (d**(-0.9313)) - 0.1252
+        # d = 0.7611 * (d**(-0.9313)) - 0.1252
+
         
         # skip this point if distance is greater than the max radius
         if d > R: return
@@ -216,9 +241,7 @@ class Collector(Robot):
         # facing the right direction, and within 0.1 m
         # not facing the right direction, and within 0.01m
         if np.linalg.norm(target - pos) < dist_tolerance:   
-            self._drive(0)
             self.clearQueue()
-            self.radio.send('DNE', 0., 0.)
         
         
         self.display.drawPoint(pos, 3, 'red')
@@ -229,11 +252,28 @@ class Collector(Robot):
         
         self.display.drawLine(pos, pos + v_head * 0.1, 'blue', name='Heading vector')
         self.display.drawLegend()
-                
+        
+        
+        
+    def _collect(self, *args):
+        """Once already facing a block, pick it up"""
+
+        colour_values = self.camera.getImageArray()[0][0]
+        as_colour = sum(c*16**(4-2*i) for i, c in enumerate(colour_values))
+        self.display.drawPoint(np.array([0., 0.]), 20, as_colour) 
+        
+        self._setClawAngle(0.3)
+        self._setClawAngle(-0.2)
+        
+
     def _wheelMotors(self, v_left, v_right):
-        # wheels might be backwards?
         self.leftmotor.setVelocity(v_left * MAX_SPEED)
         self.rightmotor.setVelocity(v_right * MAX_SPEED)
+        
+    def _setClawAngle(self, t):
+        """Open (+ve) or close (-ve) claws"""
+        self.larmmotor.setPosition(t)
+        self.rarmmotor.setPosition(-t)
         
     def _drive(self, v):
         self._wheelMotors(v, v)
@@ -262,6 +302,9 @@ class Collector(Robot):
         return rad
     
     def run(self):
+        self.step(TIME_STEP) # allow 1 time step to turn on sensors
+        self.clearQueue()
+        
         while self.step(TIME_STEP) != -1:
             self.display.clear()
 
@@ -269,7 +312,7 @@ class Collector(Robot):
             # receive message
             msg = self.radio.receive()
             if msg is not None:
-                print(msg)
+                print('Red received:', msg)
                 cmd, *values = msg
                 self.cur_command = self.commands.get(cmd, None)
                 self.cur_values = values

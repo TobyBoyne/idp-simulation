@@ -43,7 +43,7 @@ class MapDisplay:
 
     def drawPoint(self, pos, size, colour='white', name=None):
         x, y = self.normalise(pos)
-        self.display.setColor(colours[colour])
+        self.display.setColor(colours.get(colour, colour))
         self.display.fillOval(x, y, size, size)
         if name is not None: self.legend[name] = colour
 

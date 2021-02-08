@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.9924194936897659 0.10079500024163592 -0.07031298934647454 1.4343871946485125
-  position 0.430154215227692 4.465382402413878 0.8072760951528719
+  orientation 0.9998636431212018 0.01314213714309381 0.009998969732425115 4.982257552242943
+  position -0.5336734941857584 5.55244110434272 1.7097754139228984
 }
 TexturedBackground {
 }
@@ -50,7 +50,7 @@ DEF Block_R1 Solid {
   }
 }
 DEF Block_R2 Solid {
-  translation 0.665454 0.05 0.284375
+  translation 0.180124 0.05 0.334987
   children [
     USE BOX_R
   ]
@@ -61,7 +61,7 @@ DEF Block_R2 Solid {
   }
 }
 DEF Block_R3 Solid {
-  translation -0.652557 0.05 -0.0397202
+  translation -0.80352 0.05 -0.416472
   children [
     USE BOX_R
   ]
@@ -71,7 +71,7 @@ DEF Block_R3 Solid {
   }
 }
 DEF Block_R4 Solid {
-  translation 0.533529 0.05 1.02246
+  translation 0.415796 0.05 -0.633245
   children [
     USE BOX_R
   ]
@@ -81,7 +81,7 @@ DEF Block_R4 Solid {
   }
 }
 DEF Block_B1 Solid {
-  translation -0.203929 0.05 0.372288
+  translation -0.682619 0.05 0.600171
   children [
     DEF BOX_B Shape {
       appearance PBRAppearance {
@@ -99,7 +99,7 @@ DEF Block_B1 Solid {
   }
 }
 DEF Block_B2 Solid {
-  translation 0.03 0.05 0.72
+  translation -0.390817 0.05 -0.687885
   children [
     USE BOX_B
   ]
@@ -109,7 +109,7 @@ DEF Block_B2 Solid {
   }
 }
 DEF Block_B3 Solid {
-  translation 0.391075 0.05 1.14288
+  translation -0.289141 0.05 0.501861
   children [
     USE BOX_B
   ]
@@ -199,123 +199,6 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 Robot {
-  translation 0.940642 0.06 0.911727
-  children [
-    Display {
-      width 512
-      height 512
-    }
-    SharpGP2Y0A02YK0F {
-      translation 0 0 0.12
-      rotation 0 1 0 -1.5707953071795862
-      name "distance1"
-    }
-    Compass {
-    }
-    Receiver {
-      channel 1
-    }
-    Emitter {
-      channel 1
-    }
-    GPS {
-    }
-    Camera {
-      translation 0 0 0.1
-      rotation 0 1 0 -1.5708
-      fieldOfView 0.1
-      width 1
-      height 1
-    }
-    Solid {
-      translation 0 -0.03 0
-      children [
-        Shape {
-          geometry DEF CASTOR_BALL Sphere {
-            radius 0.01
-          }
-        }
-      ]
-      name "solid(2)"
-      contactMaterial "slippy"
-      boundingObject USE CASTOR_BALL
-      physics Physics {
-      }
-    }
-    DEF BODY Shape {
-      appearance PBRAppearance {
-        baseColor 1 0 0
-        roughness 1
-        metalness 0
-      }
-      geometry Box {
-        size 0.1 0.05 0.2
-      }
-    }
-    DEF WHEEL1 HingeJoint {
-      jointParameters HingeJointParameters {
-        anchor 0.06 0 0.05
-      }
-      device [
-        RotationalMotor {
-          name "wheel1"
-          maxTorque 100
-        }
-      ]
-      endPoint Solid {
-        translation 0.06000559915048376 4.758333689304164e-06 0.049998786434356526
-        rotation 0.0022067604511182342 -0.00204218805871919 -0.9999954798279062 4.712367251344769
-        children [
-          DEF WHEEL Shape {
-            appearance PBRAppearance {
-              baseColor 0.305882 0.898039 0.25098
-              roughness 1
-              metalness 0
-            }
-            geometry Cylinder {
-              height 0.02
-              radius 0.04
-              subdivision 24
-            }
-          }
-        ]
-        boundingObject USE WHEEL
-        physics Physics {
-        }
-      }
-    }
-    DEF WHEEL2 HingeJoint {
-      jointParameters HingeJointParameters {
-        anchor -0.06 0 0.05
-      }
-      device [
-        RotationalMotor {
-          name "wheel2"
-          maxTorque 100
-        }
-      ]
-      endPoint Solid {
-        translation -0.06000535798759132 -4.465355525938617e-06 0.04999811264477753
-        rotation 0.001569885892644341 -0.0014057992196953996 -0.999997779590954 4.71240229164948
-        children [
-          USE WHEEL
-        ]
-        name "solid(1)"
-        boundingObject USE WHEEL
-        physics Physics {
-        }
-      }
-    }
-  ]
-  name "test_robot"
-  boundingObject USE BODY
-  physics Physics {
-    density -1
-    mass 1
-  }
-  controller ""
-}
-Robot {
   children [
     Display {
       name "sharedDisplay"
@@ -340,4 +223,5 @@ Robot {
   controller "shared_controller"
 }
 idp_bot {
+  translation 0.924292 0.15 0.943919
 }

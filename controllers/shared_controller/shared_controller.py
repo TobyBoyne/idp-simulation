@@ -13,6 +13,25 @@ from controller import Robot
 
 TIME_STEP = 16
 
+
+def pointInsideWalls(p):
+    x, y = p
+    # L is slightly less than the actual width to account for noise in distance sensor
+    L = 1.1
+    return -L <= x <= L and -L <= y <= L
+
+def minDistance(u, v, B):
+    """Find the minimum distance between the line segment defined by u and v, and all of the boxes B
+    If v ~ u, then the two points are the same and no movement is needed"""
+    # clamp the point to the line segment using parameter t
+    # r = u + vt
+    len_sqrd = np.linalg.norm(v) ** 2
+    if len_sqrd < 1e-4: return np.inf
+    t = np.clip(np.dot(B - u, v) / len_sqrd, 0, 1)
+    projection = u + t[:, None] * v
+    return np.min(np.linalg.norm(projection - B, axis=-1), initial=np.inf)
+
+
 class Shared(Robot):
     def __init__(self):
         super().__init__()
@@ -26,21 +45,26 @@ class Shared(Robot):
         self.commands = {
             'DNE': self._robotCmdDone,
             'BOX': self._boxFound,
-            'MRK': None, # MAKE
+            'CLR': self._markBox,
         }
         
         self.cmd_ids = {'red': 1, 'blue': 1}
         
-        self.scan_route = [
-            ['MOV', 0.6, 0.5],
-            ['MOV', 0.1, 0.4],
-            ['MOV', 0., 0.]
-        ]
-        
         self.data = []
         self.box_pos = np.full((8, 2), np.nan)
         self.boxes = {'red': [], 'blue': [], 'unknown': []}
-        self.boxes_found = 0
+        
+        # create waypoint lists for each robot
+        self.scan_route = {
+            'red': self.plotScanRoute('red'),
+            'blue': self.plotScanRoute('blue')
+        }
+        
+        self.robot_pos = {'red': np.array([1., 1.]), 'blue': np.array([1., -1.])}
+        
+        # variable used to keep track of which box a robot has been sent to collect/mark
+        # using idx, NOT position
+        self.target_box = {'red': None, 'blue': None}
         
     def _procedure(self, robot):
     
@@ -51,11 +75,11 @@ class Shared(Robot):
         """
         
         cmd = self.cmd_ids[robot]
-        
+        boxes_found = np.sum(self.allBoxesFound())
         
         if cmd in [1, 2, 3, 5]:
         
-            if self.boxes_found < 8:
+            if boxes_found < 8:
             
                 if self.boxes[robot]:
                     
@@ -65,27 +89,33 @@ class Shared(Robot):
                     return ('MOV', pos[0], pos[1])
                 
                 elif self.boxes['unknown']:
-                    
                     pos = self.box_pos[self.boxes['unknown'].pop(0)]
                     self.cmd_ids[robot] = 5
                     return ('MOV', pos[0], pos[1])
                         
                 else:
-                    
-                    if self.scan_route:
+                    # if there are no known boxes:
+                    # move to the next point on the scanning route
+                    # TODO: don't necessarily pop, as may need to return to that point
+                    if self.scan_route[robot]:
                         self.cmd_ids[robot] = 6
-                        return self.scan_route.pop(0)
-                    # More decisions here for route control
+                        waypoint = self.scan_route[robot].pop(0)
+                        x, z = self.findPath(waypoint, self.robot_pos[robot])
+                        return ('MOV', x, z)
+                    
+                    else:
+                        # TODO: restart scanning route?
+                        print('Scan route exhausted')
+                        return ('RTN',)
                     
             else:
                 
                 self.cmd_ids[robot] = 8
-                return ('RTN', 0., 0.)
+                return ('RTN',)
                 
         elif cmd == 4:
-            # self.boxes_found += 1
             self.cmd_ids[robot] = 3
-            return ('RTN', 0., 0.)
+            return ('RTN',)
             
         # elif cmd == 5:
         
@@ -102,21 +132,34 @@ class Shared(Robot):
         
             self.cmd_ids[robot] = 4
             # Collect
-            return ('COL', 0., 0.)
+            return ('COL',)
         
                 
     def _robotCmdDone(self, robot, *args):
         """Once a robot has completed a command, issue the next"""
-        print('Robot has finished')
+        robot_x, robot_y = args
+        self.robot_pos[robot] = np.array([robot_x, robot_y]) 
+        
         
         if self.cmd_ids[robot] != 0:
             next_command = self._procedure(robot)
-            print(next_command)
             if next_command is not None:
                 self.red_radio.send(*next_command)
         else:
             path = os.path.join(os.getcwd(), '..', 'collector_bot', 'box_locations.npy')
             np.save(path, self.boxes)
+            
+    def _markBox(self, robot, *args):
+        """Assign the identified box to the correct colour"""
+        box_idx = self.target_box[robot]
+        box_colour = 'red' if args[0] else 'blue'
+        
+        if box_idx in self.boxes['unknown']:
+            self.boxes['unkown'].remove(box_idx)
+            self.boxes[box_colour].append(box_idx)
+            
+        else:
+            print('Marked box was not unknown')
             
                 
     def _boxFound(self, robot, *args):
@@ -124,8 +167,11 @@ class Shared(Robot):
         x, z = args
         new_box = np.array([x, z])
         
+        
         # get all the boxes that have been found i.e. not NaNs
-        boxes = self.box_pos[~np.isnan(self.box_pos[:, 0])]
+        # boxes = self.box_pos[~np.isnan(self.box_pos[:, 0])]
+        all_boxes = self.allBoxesFound()
+        boxes = self.box_pos[all_boxes]
         
         if boxes.shape[0] == 0:
             self.box_pos[0, :] = new_box
@@ -142,7 +188,8 @@ class Shared(Robot):
             return
             
         # if reach this point, recognise this as a new box
-        empty_idxs = np.isnan(self.box_pos[:, 0])
+        # empty_idxs = np.isnan(self.box_pos[:, 0])
+        empty_idxs = ~ all_boxes
         if not np.any(empty_idxs):
             print('Already found 8 boxes')
             return
@@ -151,8 +198,16 @@ class Shared(Robot):
         self.box_pos[idx, :] = new_box
         self.boxes['unknown'].append(idx)
         
-    def plotScanRoute(self, R=0.4, step_multiple=1.):
-        """Create a series of commands that make the robot take a path to scan the field"""
+        
+    def allBoxesFound(self):
+        """Return a boolean array of the boxes currently on the field
+        Once a box has been collected, no longer picked up by this function"""
+        all_boxes = self.boxes['red'] + self.boxes['blue'] + self.boxes['unknown']
+        L = self.box_pos.shape[0]
+        return np.isin(np.arange(L), all_boxes)
+        
+    def plotScanRoute(self, robot, R=0.4, step_multiple=1.):
+        """Create a series of points that make the robot take a path to scan the field"""
         start = np.array([0.92, 0.95])
         step = -step_multiple * R
         
@@ -163,14 +218,40 @@ class Shared(Robot):
         path_xs = np.concatenate([X[::(-1)**(i%2)] for i in range(len(Z))])
         path_zs = np.repeat(Z, len(X))
         
-        # create a list of commands to move and scan at each point
-        commands = []
-        for x, z in zip(path_xs, path_zs):
-            commands.append(['MOV', x, z])
-            commands.append(['SCN', R, 35])
-            
-        return commands
+        # flip in x-y plane for blue robot
+        if robot == 'blue':
+            path_zs = - path_zs
         
+        
+        # create a list of commands to move and scan at each point
+        waypoints = []
+        for x, z in zip(path_xs, path_zs):
+            waypoints.append(np.array([x, z]))
+            
+        return waypoints
+        
+        
+    def findPath(self, pt, pos):
+        """Find the most viable path to take to get to a waypoint"""
+        CLEARANCE = 0.2 # min distance between robot centre and box
+        move_vec = pt - pos
+        found_boxes = self.box_pos[self.allBoxesFound()]
+        # rotate the movement vector until a possible direction to move in is found
+        for i in range(100):
+            t = i * (np.pi / 50) * (-1)**(i % 2)
+            # TODO: check target is within arena!
+            if pointInsideWalls(pos + move_vec):
+                print('!')
+                if minDistance(pos, move_vec, found_boxes) > CLEARANCE:
+                    # return this as the target vector
+                    return pos + move_vec
+    
+            rot = np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
+            move_vec = np.dot(rot, pt - pos)
+        
+
+        raise RuntimeError('Stuck in a loop')
+                
     def run(self):
         """Main loop"""
         
@@ -181,7 +262,7 @@ class Shared(Robot):
         while self.step(TIME_STEP) != -1:
             msg = self.red_radio.receive()
             if msg is not None:
-                print(msg)
+                print('Shared received:', msg)
                 cmd, *values = msg
                 command = self.commands.get(cmd, None)
                 if command is not None:

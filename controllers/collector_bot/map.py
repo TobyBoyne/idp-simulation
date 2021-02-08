@@ -8,7 +8,7 @@ red_home = np.array([[0.8, 1.2, 1.2, 0.8], [0.8, 0.8, 1.2, 1.2]])
 blue_home = (red_home.T + np.array([0., -2., ])).T
 
 fig, ax = plt.subplots()
-ax.add_artist(plt.Polygon(red_home.T, color='tab:red'))
+ax.add_artist(plt.Polygon(red_home.T, color='tab:red', alpha=0.2))
 ax.add_artist(plt.Polygon(blue_home.T, color='blue'))
 ax.plot(*arena)
 

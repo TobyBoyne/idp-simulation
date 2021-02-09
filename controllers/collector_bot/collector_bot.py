@@ -115,7 +115,13 @@ class Collector(Robot):
         self.rightmotor.setVelocity(MAX_SPEED)
         self._setClawAngle(0.5)
         
-        self.radio = Radio(channel=1)
+        
+        if self.name == 'red_robot':
+            self.radio = Radio(channel=1)
+            self.home = np.array([1., 1.])
+        else:
+            self.radio = Radio(channel=2)
+            self.home = np.array([1., -1.])
         
         self.commands = {
             'SCN': self._scan,
@@ -128,7 +134,7 @@ class Collector(Robot):
         }
         
         # set the home position to return to with RTN statement
-        self.home = np.array([1., 1.])
+        
         
         
         # initialise these variables in __init__
@@ -353,7 +359,7 @@ class Collector(Robot):
             # receive message
             msg = self.radio.receive()
             if msg is not None:
-                print('Red received:\t', msg)
+                print(self.name + ' received:\t', msg)
                 cmd, *values = msg
                 self.cur_command = self.commands.get(cmd, None)
                 self.cur_values = values
@@ -361,6 +367,7 @@ class Collector(Robot):
                 
             # run the last command that was given
             self.runCommand()
-            
+
+   
 robot = Collector()            
 robot.run()

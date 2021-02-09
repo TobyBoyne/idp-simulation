@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 1 4.421442304848843e-18 6.915385512142265e-19 5.0223889803846875
-  position -0.5064012781888569 5.493245630640402 1.9420237603259398
+  orientation 0.03720996142097972 0.9986814538531992 0.03536626218176904 4.7618675490846405
+  position -2.7824170457404334 0.42514436308084974 0.26319486692956295
 }
 TexturedBackground {
 }
@@ -205,6 +205,7 @@ Robot {
     }
     Emitter {
       name "emitter_blue"
+      channel 2
     }
     Receiver {
       name "receiver_blue"
@@ -223,5 +224,8 @@ Robot {
   controller "shared_controller"
 }
 idp_bot {
-  translation 0.948468 0.14 0.919342
+  translation 0.948468 0.08 0.919342
+}
+idp_bot_blue {
+  translation 1.02 0.09 -1
 }

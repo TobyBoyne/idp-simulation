@@ -1,0 +1,427 @@
+PROTO idp_bot_v2 [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 1 0 0
+  field SFColor colour 1 0 0 
+	]
+	{
+	Robot {
+  translation 0 0.05 0.83
+  children [
+    LED {
+      translation 0.06 0.0925 -0.0336
+      rotation 1 0 0 -1.5707953071795862
+      children [
+        Shape {
+          appearance PBRAppearance {
+            metalness 0
+          }
+          geometry Cylinder {
+            height 0.001
+            radius 0.001
+          }
+        }
+      ]
+      name "BLUE_LED"
+      color [
+        0 0 1
+      ]
+    }
+    LED {
+      translation -0.06 0.0925 -0.0336
+      rotation 1 0 0 -1.5707953071795862
+      children [
+        Shape {
+          appearance PBRAppearance {
+            metalness 0
+          }
+          geometry Cylinder {
+            height 0.001
+            radius 0.001
+          }
+        }
+      ]
+      name "RED_LED"
+    }
+    DEF CIRCUITS Solid {
+      translation 0 0.0618 -0.0175
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.3 0.3 1
+            metalness 0.5
+          }
+          geometry DEF CircuitBoards Box {
+            size 0.0685 0.05 0.031
+          }
+        }
+      ]
+      name "solid(10)"
+      boundingObject USE CircuitBoards
+      physics Physics {
+        density 706
+      }
+    }
+    DEF BATTERYMOUNT Solid {
+      translation 0 0.0625 -0.0325
+      children [
+        Shape {
+          appearance PBRAppearance {
+            metalness 0.6
+          }
+          geometry DEF BATTERYBRACKET Box {
+            size 0.14 0.08 0.0007
+          }
+        }
+      ]
+      name "solid(9)"
+      boundingObject USE BATTERYBRACKET
+      physics Physics {
+        density 7797
+      }
+    }
+    DEF BATTERYBOX Solid {
+      translation 0 0.055 -0.0475
+      children [
+        Shape {
+          appearance PBRAppearance {
+            metalness 0
+          }
+          geometry DEF BATTERYBOX Box {
+            size 0.105 0.065 0.03
+          }
+        }
+      ]
+      name "solid(8)"
+      boundingObject USE BATTERYBOX
+      physics Physics {
+        density 19
+      }
+    }
+    DEF SERVOMASS Solid {
+      translation 0 0 0.0457
+      children [
+        Shape {
+          geometry DEF SERVO Box {
+            size 0.136 0.04 0.02
+          }
+        }
+      ]
+      name "solid(7)"
+      boundingObject USE SERVO
+      physics Physics {
+        density 699
+      }
+    }
+    DEF BATTERYMASS Solid {
+      translation 0 0.0525 -0.05
+      children [
+        Shape {
+          geometry DEF BATTERY Box {
+            size 0.073 0.06 0.02
+          }
+        }
+      ]
+      name "solid(6)"
+      boundingObject USE BATTERY
+      physics Physics {
+        density 1724
+      }
+    }
+    DEF MOTORMASS Solid {
+      translation 0 0.00136 -0.0415
+      rotation 0 0 1 1.5708
+      children [
+        Shape {
+          geometry DEF Motor_mass Cylinder {
+            height 0.156
+            radius 0.0198
+          }
+        }
+      ]
+      name "Motors Mass"
+      boundingObject USE Motor_mass
+      physics Physics {
+        density 1978
+      }
+    }
+    DistanceSensor {
+      name "distance_sensor"
+    }
+    DEF DISTANCE_SENSOR_BOX Transform {
+      translation 0 -0.0185 0.07425
+      children [
+        Solid {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0 0 0
+                metalness 0
+              }
+              geometry DEF sensor_box Box {
+                size 0.0296 0.008 0.0135
+              }
+            }
+          ]
+          name "solid(5)"
+          boundingObject USE sensor_box
+          physics Physics {
+            density 1126
+          }
+        }
+      ]
+    }
+    Display {
+    }
+    Camera {
+      translation 0 0.0122 0.0676
+      recognitionColors [
+        1 0 0
+      ]
+    }
+    Receiver {
+    }
+    Emitter {
+    }
+    GPS {
+    }
+    Compass {
+    }
+    DEF rarm HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.04 0.0225 0.0475
+      }
+      device [
+        PositionSensor {
+          name "rarm_position"
+        }
+        RotationalMotor {
+          name "rarm_motor"
+          maxVelocity 6.16
+          maxTorque 0.35
+        }
+      ]
+      endPoint Solid {
+        translation -0.04049999999113675 -6.660948120851273e-08 0.11750000437237829
+        children [
+          Solid {
+            translation 0.006 0.02 -0.035
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  metalness 0
+                }
+                geometry DEF MASS Cylinder {
+                  height 0.01
+                  radius 0.001
+                }
+              }
+            ]
+            name "solid(1)"
+            boundingObject USE MASS
+            physics Physics {
+              density 1000000
+            }
+          }
+          Transform {
+            translation 0.003521 0 0
+            rotation 0 1 0 -0.1
+            children [
+              Solid {
+                children [
+                  DEF rarm_in Shape {
+                    geometry Box {
+                      size 0.0001 0.05 0.0704
+                    }
+                  }
+                ]
+                boundingObject USE rarm_in
+                physics Physics {
+                }
+              }
+            ]
+          }
+          DEF rarm_out Shape {
+            appearance PBRAppearance {
+              metalness 0.01
+            }
+            geometry Box {
+              size 0.0001 0.05 0.07
+            }
+          }
+        ]
+        name "solid(4)"
+        boundingObject USE rarm_out
+        physics Physics {
+        }
+      }
+    }
+    DEF larm HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.04 0.0225 0.0475
+      }
+      device [
+        PositionSensor {
+          name "larm_position"
+        }
+        RotationalMotor {
+          name "larm_motor"
+          maxVelocity 6.16
+          maxTorque 0.35
+        }
+      ]
+      endPoint Solid {
+        translation 0.04049999999882369 -6.66095053836191e-08 0.11750000421734519
+        children [
+          Solid {
+            translation -0.006 0.02 -0.035
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  metalness 0
+                }
+                geometry DEF MASS Cylinder {
+                  height 0.01
+                  radius 0.001
+                }
+              }
+            ]
+            name "solid(1)"
+            boundingObject USE MASS
+            physics Physics {
+              density 1000000
+            }
+          }
+          Solid {
+            translation -0.003521 0 0
+            rotation 0 1 0 0.1
+            children [
+              Shape {
+                geometry DEF larm_inside Box {
+                  size 0.0001 0.05 0.0704
+                }
+              }
+            ]
+            boundingObject USE larm_inside
+            physics Physics {
+            }
+          }
+          Shape {
+            geometry DEF test Box {
+              size 0.0001 0.05 0.07
+            }
+          }
+        ]
+        name "solid(3)"
+        boundingObject USE test
+        physics Physics {
+        }
+      }
+    }
+    Transform {
+      translation 0 -0.034 0.0546
+      children [
+        Solid {
+          children [
+            Shape {
+              appearance PBRAppearance {
+              }
+              geometry DEF Castor Sphere {
+                radius 0.009525
+              }
+            }
+          ]
+          name "solid(2)"
+          contactMaterial "slippy"
+          boundingObject USE Castor
+          physics Physics {
+            density 140
+          }
+        }
+      ]
+    }
+    DEF rwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor -0.0833 0.00836 -0.0415
+      }
+      device [
+        RotationalMotor {
+          name "rwheel_motor"
+          acceleration 80
+          maxVelocity 3.14
+          maxTorque 0.4
+        }
+      ]
+      endPoint Solid {
+        translation -0.09449999696731329 0.008379728137912462 -0.041501737834368724
+        rotation -0.0005868570979362034 0.0005868557166061498 0.999999655599498 1.5707999454635642
+        children [
+          DEF Wheel Shape {
+            appearance PBRAppearance {
+              baseColor 1 0 0
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.0223
+              radius 0.0508
+            }
+          }
+        ]
+        name "solid(1)"
+        boundingObject USE Wheel
+        physics Physics {
+          density 498
+        }
+      }
+    }
+    DEF lwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        anchor 0.0833 0.00836 -0.0415
+      }
+      device [
+        RotationalMotor {
+          name "lwheel_motor"
+          acceleration 80
+          maxVelocity 3.14
+          maxTorque 0.4
+        }
+      ]
+      endPoint Solid {
+        translation 0.09444999798265923 0.008377927051677989 -0.04151266535775777
+        rotation -0.00029819278515996295 0.00029833518770068626 0.9999999110385852 1.5708002888669557
+        children [
+          DEF Wheel Shape {
+            appearance PBRAppearance {
+              baseColor 1 0 0
+              metalness 0
+            }
+            geometry DEF wheel_shape Cylinder {
+              height 0.0223
+              radius 0.0508
+            }
+          }
+        ]
+        boundingObject USE Wheel
+        physics Physics {
+          density 498
+        }
+      }
+    }
+    Shape {
+      appearance DEF colour PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry DEF BodyBox Box {
+        size 0.156 0.045 0.135
+      }
+    }
+  ]
+  boundingObject USE BodyBox
+  physics Physics {
+    density 614
+  }
+  controller "TEST3_controller"
+}
+}

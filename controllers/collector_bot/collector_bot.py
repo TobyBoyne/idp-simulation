@@ -13,7 +13,7 @@ from display import MapDisplay
 from controller import Robot
 
 TIME_STEP = 16
-MAX_SPEED = 6.28
+MAX_SPEED = 3.14
 
 DIST_TO_SENSOR = 0
 
@@ -30,7 +30,7 @@ def pointInsideWalls(p):
     # also ignore any points inside the homes
     inside_walls = -L <= x <= L and -L <= z <= L
     in_red_home = 0.8 <= x <= 1.2 and 0.8 <= z <= 1.2
-    in_blue_home = 0.8 <= x <= 1.2 and -0.8 <= z <= -1.2
+    in_blue_home = 0.8 <= x <= 1.2 and -0.8 >= z >= -1.2
     return inside_walls and not in_red_home and not in_blue_home
 
 def findClusters(data_lst, pos):
@@ -40,7 +40,7 @@ def findClusters(data_lst, pos):
     min_R = 0.1
 
     # if there are few datapoints, break out early
-    if data.shape[0] < 5:
+    if data.shape[0] < 2:
         return np.array([])
 
     for _ in range(8):
@@ -124,10 +124,11 @@ class Collector(Robot):
             'COL': self._collect,
             'IDN': self._identify,
             'RTN': self._return,
+            'RLS': self._release,
         }
         
         # set the home position to return to with RTN statement
-        self.home = np.array([1.1, 1.1])
+        self.home = np.array([1., 1.])
         
         
         # initialise these variables in __init__
@@ -189,17 +190,16 @@ class Collector(Robot):
                 
         #TODO make sure max radius is consistent i.e. from distance sensor or GPS centre
         R = .8
-        tot_time = 10.
+        tot_time = 5
         
          # completeness test
-        self.command_time += TIME_STEP / 1000
         if self.command_time > tot_time:
             self.clearQueue()
             return
         
         
         # Set spinning
-        self._spin(4.2 / tot_time)
+        self._spin(4.3 / tot_time)
         
         # Record spatial information
         pos = self._getPos()
@@ -254,8 +254,8 @@ class Collector(Robot):
         # stop if:
         #  facing the right direction, and within 0.1 m
         #  not facing the right direction, and within 0.01m
-        #  facing a block within 0.15m
-        near_obst = (self.dist_sensor.getValue() / 1000) < 0.11 and stop_on_obst
+        #  facing a block within 0.1m
+        near_obst = (self.dist_sensor.getValue() / 1000) < 0.1 and stop_on_obst
         if near_obst or np.linalg.norm(target - pos) < dist_tolerance:
             self.clearQueue()
             return True
@@ -285,7 +285,7 @@ class Collector(Robot):
         colour = 1. if red_channel > 50 else 0.
         # if it is the wrong colour, reverse for a bit
         if self.name == 'red_robot' and colour == 0.:
-            self._drive(-0.3)
+            self._drive(-0.5)
             if self.command_time > 1:
                 self.clearQueue(box_colour=colour)
             
@@ -295,9 +295,16 @@ class Collector(Robot):
     # RTN
     def _return(self, *args):
         """Return home"""
-        reached_end = self._move(*self.home, stop_on_obst=False)
-        if reached_end:
-            self._setClawAngle(0.5)
+        self._move(*self.home, stop_on_obst=False)
+            
+            
+    # RLS
+    def _release(self, *args):
+        """Release currently held block"""
+        self._setClawAngle(0.5)
+        self._drive(-0.5)
+        if self.command_time > 1:
+            self.clearQueue()
         
     # Motor controls
     def _wheelMotors(self, v_left, v_right):

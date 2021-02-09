@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.9998636431212018 0.01314213714309381 0.009998969732425115 4.982257552242943
-  position -0.5336734941857584 5.55244110434272 1.7097754139228984
+  orientation 1 4.421442304848843e-18 6.915385512142265e-19 5.0223889803846875
+  position -0.5064012781888569 5.493245630640402 1.9420237603259398
 }
 TexturedBackground {
 }
@@ -31,7 +31,7 @@ Floor {
   }
 }
 DEF Block_R1 Solid {
-  translation 0.268204 0.05 -0.241081
+  translation -0.738486 0.05 0.180095
   children [
     DEF BOX_R Shape {
       appearance PBRAppearance {
@@ -50,7 +50,7 @@ DEF Block_R1 Solid {
   }
 }
 DEF Block_R2 Solid {
-  translation 0.180124 0.05 0.334987
+  translation 0.460282 0.05 -0.802689
   children [
     USE BOX_R
   ]
@@ -61,7 +61,7 @@ DEF Block_R2 Solid {
   }
 }
 DEF Block_R3 Solid {
-  translation -0.80352 0.05 -0.416472
+  translation 0.166637 0.05 0.810425
   children [
     USE BOX_R
   ]
@@ -71,7 +71,7 @@ DEF Block_R3 Solid {
   }
 }
 DEF Block_R4 Solid {
-  translation 0.415796 0.05 -0.633245
+  translation 0.170247 0.05 0.228512
   children [
     USE BOX_R
   ]
@@ -119,7 +119,7 @@ DEF Block_B3 Solid {
   }
 }
 DEF Block_B4 Solid {
-  translation 1.0187 0.05 0.420125
+  translation 0.66074 0.05 -0.207041
   children [
     USE BOX_B
   ]
@@ -223,5 +223,5 @@ Robot {
   controller "shared_controller"
 }
 idp_bot {
-  translation 0.924292 0.15 0.943919
+  translation 0.948468 0.14 0.919342
 }

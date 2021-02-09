@@ -181,7 +181,7 @@ Robot {
       device [
         RotationalMotor {
           name "rwheel_motor"
-          maxVelocity 6.28
+          maxVelocity 3.14
           maxTorque 0.4
         }
       ]
@@ -213,7 +213,7 @@ Robot {
       device [
         RotationalMotor {
           name "lwheel_motor"
-          maxVelocity 6.28
+          maxVelocity 3.14
           maxTorque 0.4
         }
       ]

@@ -1,13 +1,14 @@
 PROTO idp_bot [
   field SFVec3f    translation  0 0 0
   field SFRotation rotation     0 1 0 0
-  field SFColor colour 1 0 0 
+  field SFColor{1 0 0, 0 0 1}  colour 1 0 0
+  field SFString{"red_robot", "blue_robot"} name "red_robot"
 ]
 {
 Robot {
   translation IS translation
   rotation IS rotation
-  name "red_robot"
+  name IS name
   translation 0 0.05 0.83
   children [
     DistanceSensor {

@@ -5,3 +5,4 @@ controllers/collector_bot/listfile.txt
 controllers/collector_bot/listnp.npy
 .DS_Store
 *.npy
+__pycache__

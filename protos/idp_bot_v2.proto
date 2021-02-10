@@ -1,10 +1,14 @@
 PROTO idp_bot_v2 [
   field SFVec3f    translation  0 0 0
   field SFRotation rotation     0 1 0 0
-  field SFColor colour 1 0 0 
-	]
-	{
-	Robot {
+  field SFColor{1 0 0, 0 0 1}  colour 1 0 0
+  field SFString{"red_robot", "blue_robot", "unnamed"} name "unnamed"
+]
+{
+Robot {
+  translation IS translation
+  rotation IS rotation
+  name IS name
   translation 0 0.05 0.83
   children [
     LED {
@@ -21,7 +25,7 @@ PROTO idp_bot_v2 [
           }
         }
       ]
-      name "BLUE_LED"
+      name "blue_led"
       color [
         0 0 1
       ]
@@ -40,7 +44,7 @@ PROTO idp_bot_v2 [
           }
         }
       ]
-      name "RED_LED"
+      name "red_led"
     }
     DEF CIRCUITS Solid {
       translation 0 0.0618 -0.0175
@@ -146,6 +150,8 @@ PROTO idp_bot_v2 [
     }
     DistanceSensor {
       name "distance_sensor"
+      rotation 0 1 0 -1.5708
+      lookupTable [0 0 0, 1 1000 0]
     }
     DEF DISTANCE_SENSOR_BOX Transform {
       translation 0 -0.0185 0.07425
@@ -171,12 +177,17 @@ PROTO idp_bot_v2 [
       ]
     }
     Display {
+      width 512
+      height 512
     }
     Camera {
-      translation 0 0.0122 0.0676
+      translation 0 0.0057 0.0675
+      rotation 0 1 0 3.14159
       recognitionColors [
         1 0 0
       ]
+      width 1
+      height 1
     }
     Receiver {
     }
@@ -359,7 +370,7 @@ PROTO idp_bot_v2 [
         children [
           DEF Wheel Shape {
             appearance PBRAppearance {
-              baseColor 1 0 0
+              baseColor IS colour
               metalness 0
             }
             geometry Cylinder {
@@ -393,7 +404,7 @@ PROTO idp_bot_v2 [
         children [
           DEF Wheel Shape {
             appearance PBRAppearance {
-              baseColor 1 0 0
+              baseColor IS colour
               metalness 0
             }
             geometry DEF wheel_shape Cylinder {
@@ -410,7 +421,7 @@ PROTO idp_bot_v2 [
     }
     Shape {
       appearance DEF colour PBRAppearance {
-        baseColor 1 0 0
+        baseColor IS colour
         metalness 0
       }
       geometry DEF BodyBox Box {
@@ -422,6 +433,6 @@ PROTO idp_bot_v2 [
   physics Physics {
     density 614
   }
-  controller "TEST3_controller"
+  controller "collector_bot"
 }
 }

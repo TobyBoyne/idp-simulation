@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.03720996142097972 0.9986814538531992 0.03536626218176904 4.7618675490846405
-  position -2.7824170457404334 0.42514436308084974 0.26319486692956295
+  orientation 0.4327530008075249 0.7936673258077644 0.4275710657156703 4.495075623666228
+  position -2.277028966939094 5.1422095872524825 -0.3349953884361299
 }
 TexturedBackground {
 }
@@ -55,7 +55,6 @@ DEF Block_R2 Solid {
     USE BOX_R
   ]
   name "solid(13)"
-  contactMaterial "block"
   boundingObject USE BOX_R
   physics Physics {
   }
@@ -223,9 +222,11 @@ Robot {
   name "shared"
   controller "shared_controller"
 }
-idp_bot {
-  translation 0.948468 0.08 0.919342
+idp_bot_v2 {
+  translation 0.960587 0.1 0.983579
+  rotation 0 1 0 3.14159
 }
-idp_bot_blue {
-  translation 1.02 0.09 -1
+idp_bot_v2 {
+  translation 0.964198 0.09 -0.990676
+  colour 0 0 1
 }

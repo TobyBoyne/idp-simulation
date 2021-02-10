@@ -17,6 +17,10 @@ MAX_SPEED = 3.14
 
 DIST_TO_SENSOR = 0
 
+# claw angles
+CLAW_OPEN = 0.3
+CLAW_CLOSE = -0.2
+
 # parameters based on the colour of the robot
 ROBOT_PARAMS = {
     'red_bot': {'colour': 'red', 'channel': 1}
@@ -91,6 +95,7 @@ class Collector(Robot):
         self.camera.enable(TIME_STEP)
         
         self.name = self.getName()
+        if self.name == 'unnamed': raise RuntimeError
         
         # setup motors
         self.leftmotor = self.getDevice('lwheel_motor')
@@ -113,7 +118,7 @@ class Collector(Robot):
         self.rarmmotor.setPosition(0.)
         self.leftmotor.setVelocity(MAX_SPEED)
         self.rightmotor.setVelocity(MAX_SPEED)
-        self._setClawAngle(0.5)
+        self._setClawAngle(CLAW_OPEN)
         
         
         if self.name == 'red_robot':
@@ -269,7 +274,7 @@ class Collector(Robot):
             self.clearQueue()
             return
             
-        # timeout
+        # 
         
         
         self.display.drawPoint(pos, 3, 'red')
@@ -285,7 +290,7 @@ class Collector(Robot):
     # COL
     def _collect(self, *args):
         """Once already facing a block, pick it up"""
-        self._setClawAngle(-0.2)
+        self._setClawAngle(CLAW_CLOSE)
         if self.command_time > 0.5: # small wait to avoid hitting the block
             self.clearQueue()
         
@@ -300,7 +305,7 @@ class Collector(Robot):
         
         bot_colours = {'red_robot': 1., 'blue_robot': 0.}
         if self.reversing:
-            self._drive(-0.5)
+            self._drive(-1)
             if self.command_time > 1:
                 self.clearQueue(box_colour=1.-bot_colours[self.name], box_found=1.)
             return
@@ -323,9 +328,9 @@ class Collector(Robot):
     # RLS
     def _release(self, *args):
         """Release currently held block"""
-        self._setClawAngle(0.5)
+        self._setClawAngle(CLAW_OPEN)
         self._drive(-1)
-        if self.command_time > 1:
+        if self.command_time > 2:
             self.clearQueue()
         
     # Motor controls

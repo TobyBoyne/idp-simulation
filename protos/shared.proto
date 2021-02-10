@@ -1,0 +1,36 @@
+PROTO shared [
+  field SFVec3f    translation  0 0 0
+  field SFRotation rotation     0 1 0 0
+]
+{
+Robot {
+  translation IS translation
+  rotation IS rotation
+  name "shared"
+  translation 0 0.05 0.83
+  children [
+    Display {
+      name "sharedDisplay"
+      width 512
+      height 512
+    }
+    Receiver {
+      name "receiver_red"
+      channel 1
+    }
+    Emitter {
+      name "emitter_red"
+      channel 1
+    }
+    Receiver {
+      name "receiver_blue"
+      channel 2
+    }
+    Emitter {
+      name "emitter_blue"
+      channel 2
+    }
+    ]
+  controller "shared_controller"
+}
+}

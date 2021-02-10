@@ -142,7 +142,9 @@ class Collector(Robot):
         self.command_time = 0 # keeps track of how long the current command has been run for
         
         self.cur_command = None
-        self.cur_values = []        
+        self.cur_values = []
+        
+        self.reversing = False # used to overwrite command and reverse
         
         # display useful for debugging
         display = self.getDevice('display')
@@ -155,6 +157,7 @@ class Collector(Robot):
         self.cur_values = []
         
         self.command_time = 0
+        self.reversing = False
 
         if self.data:
             # find the boxes, send data to shared controller
@@ -166,7 +169,7 @@ class Collector(Robot):
             self.data = []
             
         if 'box_colour' in kwargs:
-            self.radio.send('CLR', kwargs['box_colour'])
+            self.radio.send('CLR', kwargs['box_colour'], kwargs['box_found'])
             
         
         x, z = self._getPos()
@@ -264,7 +267,9 @@ class Collector(Robot):
         near_obst = (self.dist_sensor.getValue() / 1000) < 0.1 and stop_on_obst
         if near_obst or np.linalg.norm(target - pos) < dist_tolerance:
             self.clearQueue()
-            return True
+            return
+            
+        # timeout
         
         
         self.display.drawPoint(pos, 3, 'red')
@@ -287,16 +292,27 @@ class Collector(Robot):
     # IDN
     def _identify(self, *args):
         """Line up with the box in front, then identify its colour and reverse"""
-        red_channel = self.camera.getImageArray()[0][0][0]
-        colour = 1. if red_channel > 50 else 0.
-        # if it is the wrong colour, reverse for a bit
-        if self.name == 'red_robot' and colour == 0.:
+        # first, confirm that there is a box in front
+        d = self.dist_sensor.getValue() / 1000
+        if d > 0.3:
+            self.clearQueue(box_colour=0, box_found=0.)
+            return        
+        
+        bot_colours = {'red_robot': 1., 'blue_robot': 0.}
+        if self.reversing:
             self._drive(-0.5)
             if self.command_time > 1:
-                self.clearQueue(box_colour=colour)
+                self.clearQueue(box_colour=1.-bot_colours[self.name], box_found=1.)
+            return
+        red_channel = self.camera.getImageArray()[0][0][0]
+        colour = 1. if red_channel > 50 else 0.
+        
+        # if it is the wrong colour, reverse for a bit
+        if colour != bot_colours[self.name]:
+            self.reversing = True
             
         else:
-            self.clearQueue(box_colour=colour)
+            self.clearQueue(box_colour=colour, box_found=1.)
         
     # RTN
     def _return(self, *args):
@@ -308,7 +324,7 @@ class Collector(Robot):
     def _release(self, *args):
         """Release currently held block"""
         self._setClawAngle(0.5)
-        self._drive(-0.5)
+        self._drive(-1)
         if self.command_time > 1:
             self.clearQueue()
         

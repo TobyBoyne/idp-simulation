@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.4327530008075249 0.7936673258077644 0.4275710657156703 4.495075623666228
-  position -2.277028966939094 5.1422095872524825 -0.3349953884361299
+  orientation 0.9997646449188379 0.016250629060852458 0.014372606772490144 4.834655358144548
+  position -0.7575272162766498 6.07317757051382 0.5088184276572733
 }
 TexturedBackground {
 }
@@ -219,14 +219,18 @@ Robot {
       channel 1
     }
   ]
-  name "shared"
-  controller "shared_controller"
+  name "oldShared"
+  controller ""
 }
 idp_bot_v2 {
   translation 0.960587 0.1 0.983579
   rotation 0 1 0 3.14159
+  name "red_robot"
 }
 idp_bot_v2 {
   translation 0.964198 0.09 -0.990676
   colour 0 0 1
+  name "blue_robot"
+}
+shared {
 }

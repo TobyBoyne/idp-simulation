@@ -13,6 +13,7 @@ from controller import Robot
 
 TIME_STEP = 16
 
+# TODO: on return, pick avoid blocks
 
 def targetInsideWalls(robot, p):
     x, z = p
@@ -36,13 +37,13 @@ def minDistance(u, v, B):
     return np.min(np.linalg.norm(projection - B, axis=-1), initial=np.inf)
 
 SCAN_R = 0.8
-SCAN_STEP = 0.7
+SCAN_STEP = 0.8
 def plotScanRoute(robot):
     """Create a series of points that make the robot take a path to scan the field"""
     R = SCAN_R
     step_multiple = SCAN_STEP
     
-    start = np.array([1., 1.])
+    start = np.array([.8, .8])
     step = -step_multiple * R
 
     X = np.arange(start[0], -1.1, step)
@@ -60,7 +61,7 @@ def plotScanRoute(robot):
     waypoints = []
     for x, z in zip(path_xs, path_zs):
         waypoints.append(np.array([x, z]))
-
+    print(f'{len(waypoints)} waypoints per robot')
     return waypoints
 
 
@@ -110,6 +111,8 @@ class Shared(Robot):
         
         display = self.getDevice('sharedDisplay')
         self.display = MapDisplay(display)
+        
+        self.first_to_finish = ''
 
     def _procedure(self, robot):
     
@@ -123,6 +126,7 @@ class Shared(Robot):
         # print(f'{robot.colour}: {cmd}')
         
         if cmd in [1, 2, 9]:
+            print(self.boxes)
                 
             box_lists = (self.boxes[robot.colour], self.boxes['unknown'])
             for box_list, next_cmd in zip(box_lists, (7, 5)):
@@ -134,12 +138,26 @@ class Shared(Robot):
                 same_side = box_pos[:, 1] * robot.arena_side > 0
                 box_pos = box_pos[same_side]
                 box_idxs = box_idxs[same_side]
+                
+                # filter to not include the box that is targetted by the other robot
+                already_targeted = box_idxs == self.otherBot(robot).target_box
+                box_pos = box_pos[~already_targeted]
+                box_idxs = box_idxs[~already_targeted]
+                print('suspicious', box_pos)
                 if box_pos.shape[0] == 0: continue
 
-                robot.cmd_id = next_cmd
+                # TODO: find nearest box
+                
                 robot.target_box = box_idxs[0]
-                box_x, box_z = box_pos[0]
-                return ('MOV', box_x, box_z)
+                
+                (x, z), full_length = self.findPath(robot, box_pos[0], ignore_self_colour=True)
+                
+                if full_length:
+                    # only collect if the box has been reached
+                    robot.cmd_id = next_cmd
+                
+                
+                return ('MOV', x, z)
                     
             else: # nobreak
                 # if there are no known boxes:
@@ -151,10 +169,8 @@ class Shared(Robot):
                     # if the robot does not move the full length, move again
                     if full_length:
                         robot.scan_route.pop(0)
-                        robot.cmd_id = 6
-                    else:
-                        # repeat current command
-                        robot.cmd_id = 1
+                    robot.cmd_id = 6
+
                     return ('MOV', x, z)
                 
                 else:
@@ -162,14 +178,22 @@ class Shared(Robot):
                         print(f'{robot.colour} scan route exhausted')
                         robot.scan_complete = True
                     remaining_boxes = self.boxes[robot.colour] + self.boxes['unknown']
+                    
                     if remaining_boxes:
                     
                         # if blue, pause until red is finished
-                        if robot.colour == 'blue':
-                            red_bot = self.otherBot(robot)
-                            if not red_bot.complete:
+                        other_bot = self.otherBot(robot)
+                        if not self.first_to_finish and not other_bot.scan_complete:
+                            self.first_to_finish = robot.colour
+
+                        
+                        if robot.colour == self.first_to_finish:
+                            if not other_bot.complete:
+                                if robot.complete:
+                                    return ('IDL', 1.)
+                                robot.complete = True
                                 return ('RTN',)
-                                return ('IDL', 1.)
+                                
                     
                         robot.cmd_id = 3
                         robot.target_box = None
@@ -179,6 +203,7 @@ class Shared(Robot):
                         # all boxes found - complete!
                         robot.complete = True
                         robot.cmd_id = 8
+                        robot.target_box = None
                         return ('RTN',)
                         
 
@@ -290,24 +315,33 @@ class Shared(Robot):
     def otherBot(self, robot):
         return self.robots['red'] if robot=='blue' else self.robots['blue']    
     
-    def allBoxesFound(self):
+    def allBoxesFound(self, avoid_colour=None):
         """Return a boolean array of the boxes currently on the field
         Once a box has been collected, no longer picked up by this function"""
-        all_boxes = self.boxes['red'] + self.boxes['blue'] + self.boxes['unknown']
+        if avoid_colour is None:
+            all_boxes = self.boxes['red'] + self.boxes['blue'] + self.boxes['unknown']
+        else:
+            if avoid_colour == 'blue': all_boxes = self.boxes['blue']
+            if avoid_colour == 'red':  all_boxes = self.boxes['red']
         L = self.box_pos.shape[0]
         return np.isin(np.arange(L), all_boxes)
         
 
         
-    def findPath(self, robot, pt):
+    def findPath(self, robot, pt, ignore_self_colour=False):
         """Find the most viable path to take to get to a waypoint"""
         # return True if was able to move the full distance
+        # ignore_self_colour needed for collecting blocks
         MAX_DISTANCE = SCAN_R
         CLEARANCE = 0.2 # min distance between robot centre and box
         
         pos = robot.pos
         move_vec = pt - pos
-        found_boxes = self.box_pos[self.allBoxesFound()]
+        if ignore_self_colour:
+            other_colour = self.otherBot(robot).colour
+            found_boxes = self.box_pos[self.allBoxesFound(avoid_colour=other_colour)]
+        else:
+            found_boxes = self.box_pos[self.allBoxesFound()]
         # rotate the movement vector until a possible direction to move in is found
         for i in range(100):
             t = i * (np.pi / 50) * (-1)**(i % 2)

@@ -274,7 +274,10 @@ class Collector(Robot):
             self.clearQueue()
             return
             
-        # 
+        # timeout - if stuck on a wall
+        if self.command_time > 20:
+            self.clearQueue()
+            return
         
         
         self.display.drawPoint(pos, 3, 'red')

@@ -13,8 +13,8 @@ def plot_scanning(ax, R=1., step_multiple=1., start_multiple=0.7):
                    labelbottom=False, labelleft=False)
 
     step = step_multiple * R
-    start = start_multiple * R
-
+    # start = start_multiple * R
+    start = 0.4
     X = np.arange(start, ARENA_SIZE / 2, step)
     Y = np.arange(start, ARENA_SIZE, step)
 

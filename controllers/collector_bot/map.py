@@ -48,7 +48,7 @@ def findClusters(data):
 	for n in range(k):
 		new_centroid = data[closest_centroid == n].mean(axis=0)
 		centroids[n] = new_centroid
-
+	print(centroids)
 	ax.scatter(*centroids.T, color='tab:blue')
 
 
@@ -60,12 +60,14 @@ X, Y = np_data.T
 
 ax.scatter(X, Y, alpha=0.1, color='grey')
 
-# findClusters(np_data)
+findClusters(np_data)
 
 np_boxes = np.load('box_locations.npy')
 x, y = np_boxes.T
-ax.scatter(x, y)
-
+# ax.scatter(x, y)
+ax.plot(-1.086446, 0.28461, 'rx')
+ax.plot(-0.70511521, 0.388452, 'bx')
+ax.plot([-0.70511521, -1.086446], [0.388452, 0.28461])
 ax.set_xlim(-1.4, 1.4)
 ax.set_ylim(1.4, -1.4)
 ax.set_aspect('equal')

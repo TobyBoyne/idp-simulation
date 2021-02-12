@@ -22,15 +22,15 @@ CLAW_OPEN = 0.3
 CLAW_CLOSE = -0.2
 
 # parameters based on the colour of the robot
-ROBOT_PARAMS = {
-    'red_bot': {'colour': 'red', 'channel': 1}
+ARENA_SIDE = {
+    'red_robot': 1, 'blue_robot': -1
 }
 
         
 def pointInsideWalls(p):
     x, z = p
     # L is slightly less than the actual width to account for noise in distance sensor
-    L = 1.16
+    L = 1.18
     # also ignore any points inside the homes
     inside_walls = -L <= x <= L and -L <= z <= L
     in_red_home = 0.8 <= x <= 1.2 and 0.8 <= z <= 1.2
@@ -150,10 +150,7 @@ class Collector(Robot):
         self.cur_values = []
         
         self.reversing = False # used to overwrite command and reverse
-        
-        # display useful for debugging
-        display = self.getDevice('display')
-        self.display = MapDisplay(display)
+
         
     def clearQueue(self, **kwargs):
         """Finish any processing from the current command, then reset all variables"""
@@ -200,7 +197,6 @@ class Collector(Robot):
         # Testing red colour detection
         colour_values = self.camera.getImageArray()[0][0]
         as_colour = sum(c*16**(4-2*i) for i, c in enumerate(colour_values))
-        self.display.drawPoint(np.array([0., 0.]), 20, as_colour) 
                 
         #TODO make sure max radius is consistent i.e. from distance sensor or GPS centre
         R = .8
@@ -218,7 +214,6 @@ class Collector(Robot):
         # Record spatial information
         pos = self._getPos()
         d = self.dist_sensor.getValue() / 1000
-        self.display.drawText(f'{d:.3f}', 10, 100)
         heading_vec = self._getBearing(as_vector=True)
         # Process dist sensor measurement
 
@@ -233,6 +228,9 @@ class Collector(Robot):
                 
         # skip this point if it lies on a wall
         if not pointInsideWalls(pos_t): return
+        
+        # ignore points on the other side of the field
+        if pos_t[1] * ARENA_SIDE[self.name] < 0: return
         
         # Store for evaluation
         self.data.append(pos_t)
@@ -251,7 +249,7 @@ class Collector(Robot):
         cross = v_head[0] * v_targ[1] - v_head[1] * v_targ[0]
         
         
-        if theta < 0.1:
+        if theta < 0.02:
             dist_tolerance = 0.1
             speed = 1
             self._drive(1)
@@ -278,17 +276,7 @@ class Collector(Robot):
         if self.command_time > 20:
             self.clearQueue()
             return
-        
-        
-        self.display.drawPoint(pos, 3, 'red')
-        
-        self.display.drawLine(pos, pos + v_targ * 0.1, 'white', name='Target vector')
-        self.display.drawPoint(target, 3, 'white')
-        self.display.drawText('left' if cross<0 else 'right', 10, 450, 'white')
-        
-        self.display.drawLine(pos, pos + v_head * 0.1, 'blue', name='Heading vector')
-        self.display.drawLegend()
-        
+       
         
     # COL
     def _collect(self, *args):
@@ -325,7 +313,7 @@ class Collector(Robot):
     # RTN
     def _return(self, *args):
         """Return home"""
-        self._move(*self.home, stop_on_obst=False)
+        self._move(*args, stop_on_obst=False)
             
             
     # RLS
@@ -333,7 +321,7 @@ class Collector(Robot):
         """Release currently held block"""
         self._setClawAngle(CLAW_OPEN)
         self._drive(-1)
-        if self.command_time > 2:
+        if self.command_time > 0.5:
             self.clearQueue()
         
     # Motor controls
@@ -376,7 +364,6 @@ class Collector(Robot):
         self.clearQueue()
         
         while self.step(TIME_STEP) != -1:
-            self.display.clear()
             self.command_time += TIME_STEP / 1000
 
             

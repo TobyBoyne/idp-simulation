@@ -348,12 +348,16 @@ class Shared(Robot):
         
 
         
-    def findPath(self, robot, pt, ignore_self_colour=False, MAX_DISTANCE=SCAN_R, on_side=None):
+    def findPath(self, robot, pt, ignore_self_colour=False, MAX_DISTANCE=None, on_side=None):
         """Find the most viable path to take to get to a waypoint"""
         # return True if was able to move the full distance
         # ignore_self_colour needed for collecting blocks
         
+        
         CLEARANCE = 0.2 # min distance between robot centre and box
+        
+        if MAX_DISTANCE is None:
+            MAX_DISTANCE = SCAN_R - CLEARANCE
         
         pos = robot.pos
         base_move_vec = pt - pos

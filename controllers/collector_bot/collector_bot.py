@@ -15,8 +15,6 @@ from controller import Robot
 TIME_STEP = 16
 MAX_SPEED = 3.14
 
-DIST_TO_SENSOR = 0
-
 # claw angles
 CLAW_OPEN = 0.3
 CLAW_CLOSE = -0.2
@@ -222,7 +220,7 @@ class Collector(Robot):
         if d > R: return
         
         # Find Target Coords
-        pos_d = pos + DIST_TO_SENSOR * heading_vec
+        pos_d = pos
         pos_t = pos_d + d * heading_vec
                 
                 

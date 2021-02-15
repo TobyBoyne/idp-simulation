@@ -1,7 +1,10 @@
 TEST1_world - losing blocks for seemingly no reason (two of the ones in the square of blocks), checking colour in wrong place, so block goes missing, multiple collisions as a result.
-
+ -> 255
+ -> full_lenght==True and no block, even tho didn't go directly to the block
+ -> better to ignore the block
+ -> RAISE FLAG that there was a block detected that is no longer there
 TEST4_world - missed one block on scan (in other half so ignored it?), drove to wrong place to test colour.
-
+ -> 245
 TEST5_world - no clear path for one robot, so instruct the other one to clear it? (low priority)
 
 TEST6_world - block was just outside blue robot inital scan, then clipped it during second scan
@@ -9,7 +12,11 @@ TEST6_world - block was just outside blue robot inital scan, then clipped it dur
 TEST7_world - very close to some blocks, blue robot missed/ignored block B2 (in the other half so ignored?)
 
 TEST8_world - B1 missed by red bot, blue bot collided with R3, R4 during scans
-
+-> slow, but it works (?)
+-> mess around with clearance
+-> hopefully manual scanning points will pick up last blue block
+-> STOP SCANNING AFTER 4B 4R COLOURS DETECTED
+- > after 4:30, robot.completed = True
 TEST9_world - wasted time scanning when all blocks and colours known, ran out of time due to long distances (though this is unlikely to be a problem in reality)
 
 

@@ -47,7 +47,9 @@ def findClusters(data_lst, pos):
 
     for _ in range(8):
         dists = np.linalg.norm(data[:, None, :] - centroids[None, :, :], axis=-1)
-        potentials = (1 / dists).sum(axis=1)
+        
+        with np.errstate(divide='ignore'):
+            potentials = (1 / dists).sum(axis=1)
 
         new_c_idx = np.argmin(potentials)
 
@@ -165,7 +167,7 @@ class Collector(Robot):
             for coord in box_coords:
                 x, z = coord
                 self.radio.send('BOX', x, z)
-            np.save('listnp.npy', np.array(self.data)) 
+            # np.save('listnp.npy', np.array(self.data)) 
             self.data = []
             
         if 'box_colour' in kwargs:
@@ -181,7 +183,7 @@ class Collector(Robot):
             self.cur_command(*self.cur_values)
     
     # IDL
-    def _idle (self, *args):
+    def _idle(self, *args):
         self._drive(0)
         if args:
             tot_time = args[0]
@@ -281,7 +283,10 @@ class Collector(Robot):
         """Once already facing a block, pick it up"""
         self._setClawAngle(CLAW_CLOSE)
         if self.command_time > 0.5: # small wait to avoid hitting the block
-            self.clearQueue()
+            # start reversing
+            self._drive(-1)
+            if self.command_time > 1:
+                self.clearQueue()
         
     # IDN
     def _identify(self, *args):
@@ -368,7 +373,7 @@ class Collector(Robot):
             # receive message
             msg = self.radio.receive()
             if msg is not None:
-                print(self.name + ' received:\t', msg)
+                # print(self.name + ' received:\t', msg)
                 cmd, *values = msg
                 self.cur_command = self.commands.get(cmd, None)
                 self.cur_values = values

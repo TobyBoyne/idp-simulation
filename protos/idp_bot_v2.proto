@@ -176,10 +176,6 @@ Robot {
         }
       ]
     }
-    Display {
-      width 512
-      height 512
-    }
     Camera {
       translation 0 0.0057 0.0675
       rotation 0 1 0 3.14159

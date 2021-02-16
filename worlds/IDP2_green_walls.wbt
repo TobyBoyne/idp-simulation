@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 1 0 0 4.71238898038469
-  position 1.29464129108446e-15 4.910611817682351 -5.962987521079898e-17
+  orientation 0.9999870451004559 -0.004017984034967112 -0.0031249696883771843 4.961126424123677
+  position -0.31806155023536936 5.318057786460883 1.416994203869584
 }
 TexturedBackground {
 }
@@ -196,15 +196,15 @@ DEF WALL_4 Solid {
   name "solid(3)"
   boundingObject USE WALL_SHAPE
 }
+shared {
+}
 idp_bot_v2 {
-  translation 0.966962 0.08 0.967709
+  translation 0.945257 0.16 0.948355
   rotation 0 1 0 3.14159
   name "red_robot"
 }
 idp_bot_v2 {
-  translation 0.968489 0.08 -0.985154
+  translation 0.981495 0.1 -0.98212
   colour 0 0 1
   name "blue_robot"
-}
-shared {
 }

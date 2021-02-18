@@ -1,0 +1,210 @@
+#VRML_SIM R2021a utf8
+WorldInfo {
+  basicTimeStep 16
+  coordinateSystem "NUE"
+  contactProperties [
+    ContactProperties {
+      material2 "slippy"
+      coulombFriction [
+        0
+      ]
+    }
+    ContactProperties {
+      material2 "block"
+      coulombFriction [
+        0.01
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation -0.9988308041403441 -0.028210023985025895 0.03925836531387918 1.4412390159126325
+  position -0.6990657302297325 6.003621170583757 0.7328258762265468
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Floor {
+  size 2.4 2.4
+  appearance Asphalt {
+  }
+}
+DEF Block_R1 Solid {
+  translation 0.7396 0.05 1.0751
+  children [
+    DEF BOX_R Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(4)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R2 Solid {
+  translation 0.977 0.05 0.6057
+  children [
+    USE BOX_R
+  ]
+  name "solid(13)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R3 Solid {
+  translation -0.8766 0.05 -0.8046
+  children [
+    USE BOX_R
+  ]
+  name "solid(12)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R4 Solid {
+  translation -0.1839 0.05 0.42
+  children [
+    USE BOX_R
+  ]
+  name "solid(7)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_B1 Solid {
+  translation 0.311 0.05 1.0743
+  children [
+    DEF BOX_B Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(8)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B2 Solid {
+  translation -0.9458 0.05 -0.0344
+  children [
+    USE BOX_B
+  ]
+  name "solid(9)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B3 Solid {
+  translation -0.5205 0.05 0.7057
+  children [
+    USE BOX_B
+  ]
+  name "solid(10)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B4 Solid {
+  translation 0.1102 0.05 -0.8416
+  children [
+    USE BOX_B
+  ]
+  name "solid(11)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(6)"
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 -1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(5)"
+}
+DEF WALL_1 Solid {
+  translation 1.2 0.05 0
+  children [
+    DEF WALL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 0 0.333333 0
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.02 0.1 2.38
+      }
+    }
+  ]
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_2 Solid {
+  translation -1.2 0.05 0
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(1)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_3 Solid {
+  translation 0 0.05 -1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(2)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_4 Solid {
+  translation 0 0.05 1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(3)"
+  boundingObject USE WALL_SHAPE
+}
+shared {
+}
+idp_bot_v2 {
+  translation 1.02656 0.13 1.00548
+  rotation 0 1 0 3.14159
+  name "red_robot"
+}
+idp_bot_v2 {
+  translation 0.98688 0.1 -0.998206
+  colour 0 0 1
+  name "blue_robot"
+}

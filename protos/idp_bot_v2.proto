@@ -151,7 +151,7 @@ Robot {
     DistanceSensor {
       name "distance_sensor"
       rotation 0 1 0 -1.5708
-      lookupTable [0 0 0, 1 1000 0]
+      lookupTable [0 0 0, 1 1000 0.02]
     }
     DEF DISTANCE_SENSOR_BOX Transform {
       translation 0 -0.0185 0.07425

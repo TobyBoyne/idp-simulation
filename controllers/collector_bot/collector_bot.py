@@ -28,7 +28,7 @@ ARENA_SIDE = {
 def pointInsideWalls(p):
     x, z = p
     # L is slightly less than the actual width to account for noise in distance sensor
-    L = 1.18
+    L = 1.12
     # also ignore any points inside the homes
     inside_walls = -L <= x <= L and -L <= z <= L
     in_red_home = 0.8 <= x <= 1.2 and 0.8 <= z <= 1.2

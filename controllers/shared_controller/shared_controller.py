@@ -209,6 +209,7 @@ class Shared(Robot):
                     #only collect if the box has been reached
                     if np.linalg.norm(target - self.box_pos[idx]) > 0.005:
                         robot.ignored_boxes.append(idx)
+                        return ('IDL', 0.1)
                     else:
                         robot.cmd_id = next_cmd
                     
